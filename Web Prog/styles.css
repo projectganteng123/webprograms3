@@ -1,0 +1,833 @@
+/* styles.css */
+
+/* Reset and General Styles */
+body {
+    margin: 0;
+    font-family: 'Quicksand', sans-serif; /* Font untuk konten */
+
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #2c3e50; /* Dark color */
+    color: #ecf0f1; /* Light text color */
+    padding: 20px;
+    position: fixed; /* Fixed header */
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000; /* Ensure header is above other content */
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+}
+
+.logo img {
+    width: 80px; /* Logo size */
+    height: auto;
+    margin-right: 10px;
+}
+
+nav ul {
+    list-style: none;
+    display: flex;
+    margin: 0;
+    padding: 0;
+}
+
+nav ul li {
+    margin: 0 15px;
+}
+
+nav ul li a {
+    text-decoration: none;
+    color: #ecf0f1; /* Light text color */
+    transition: color 0.3s ease;
+}
+
+nav ul li a:hover {
+    color: #3498db; /* Hover color */
+}
+
+/* Hamburger Styles */
+.hamburger {
+    width: 25px;
+    display: none; /* Hidden by default */
+    flex-direction: column;
+    cursor: pointer;
+}
+
+.line {
+    height: 3px;
+    width: 25px;
+    background-color: #ecf0f1; /* Light color for lines */
+    margin: 3px 0;
+}
+
+/* Sidebar Styles */
+.sidebar {
+    position: fixed;
+    /* top: 0; */
+    right: -250px; /* Hide sidebar off-screen */
+    width: 250px;
+    height: 100%;
+    background-color: #34495e; /* Sidebar background color */
+    color: white;
+    transition: right 0.3s ease; /* Smooth transition */
+    z-index: 999; /* Ensure it is above other content */
+}
+
+.sidebar ul {
+    list-style: none;
+    padding: 20px;
+}
+
+.sidebar ul li {
+    margin: 15px 0;
+}
+
+.sidebar ul li a {
+    color: white;
+    text-decoration: none;
+}
+
+/* Responsive Design */
+@media (max-width: 922px) {
+    nav ul {
+        display: none; /* Hide menu by default */
+    }
+
+    .hamburger {
+        display: flex; /* Show hamburger icon */
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+}
+
+
+
+/* Tambahkan margin atas pada konten utama untuk menghindari tumpang tindih dengan header */
+main {
+    margin-top: 100px; /* Sesuaikan dengan tinggi header */
+}
+
+/* Section Styles */
+section {
+    scroll-margin-top: 100px; /* Sesuaikan dengan tinggi navbar */
+    padding: 20px;
+    margin: 20px auto;
+    max-width: 1200px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+/* Home Section */
+#home {
+    position: relative;
+    text-align: center;
+    color: white;
+    background-image: url('images/dummy-slider1.webp'); /* Ganti dengan gambar latar belakang Anda */
+    background-size: cover; /* Mengatur gambar agar menutupi seluruh area */
+    background-position: center; /* Memusatkan gambar */
+    height: 100vh; /* Mengatur tinggi bagian home */
+    display: flex;
+    align-items: center; /* Menyelaraskan konten secara vertikal */
+    justify-content: center; /* Menyelaraskan konten secara horizontal */
+}
+
+#home {
+    position: relative;
+    text-align: center;
+    color: white;
+    background-size: cover; /* Mengatur gambar agar menutupi seluruh area */
+    background-position: center; /* Memusatkan gambar */
+    height: 100vh; /* Mengatur tinggi bagian home */
+    display: flex;
+    align-items: center; /* Menyelaraskan konten secara vertikal */
+    justify-content: center; /* Menyelaraskan konten secara horizontal */
+    transition: background-image 1s ease; /* Transisi halus saat mengganti gambar */
+}
+
+.home-content {
+    background-color: rgba(0, 0, 0, 0.4); /* Latar belakang semi-transparan untuk konten */
+    padding: 40px;
+    border-radius: 10px; /* Sudut melengkung */
+    max-width: 600px; /* Lebar maksimum konten */
+}
+
+h1 {
+    padding-inline: 5px;
+    font-size: 2.5em; /* Ukuran font untuk judul */
+    margin: 0;
+}
+
+.slogan {
+    font-size: 1.5em; /* Ukuran font untuk slogan */
+    margin: 10px 0;
+}
+
+.description {
+    font-size: 1.2em; /* Ukuran font untuk deskripsi */
+    line-height: 1.5; /* Jarak antar baris */
+}
+
+#about {
+    padding: 40px;
+    background-color: #f9f9f9; /* Warna latar belakang yang lembut */
+    text-align: center; /* Menyelaraskan teks ke tengah */
+}
+
+h2 {
+    font-size: 2.5em; /* Ukuran font untuk judul */
+    margin-bottom: 20px; /* Jarak bawah judul */
+}
+
+.about-container {
+    display: flex; /* Menggunakan flexbox untuk tata letak */
+    align-items: center; /* Menyelaraskan item secara vertikal */
+    justify-content: space-between; /* Menyelaraskan item secara horizontal */
+    max-width: 1200px; /* Lebar maksimum kontainer */
+    margin: auto; /* Memusatkan kontainer */
+}
+
+.about-image {
+    width: 20%; /* Mengatur lebar gambar */
+    height: auto; /* Memastikan gambar tetap proporsional */
+    border-radius: 10px; /* Sudut melengkung pada gambar */
+}
+@media (max-width: 768px){
+    .about-image{
+        content: url('images/about-image2.png');
+    }
+}
+
+@media (max-width: 576px){
+    .about-image{
+        content: url('images/about-image.jpg');
+    }
+}
+    
+@media (max-width: 370px){
+    .about-image{
+        content: url('images/about-image2.png');
+    }
+}
+    
+
+.about-text {
+    width: 75%; /* Mengatur lebar teks */
+    text-align: left; /* Menyelaraskan teks ke kiri */
+}
+
+.about-text p {
+    font-size: 1.2em; /* Ukuran font untuk paragraf */
+    line-height: 1.6; /* Jarak antar baris */
+    margin-bottom: 15px; /* Jarak bawah antar paragraf */
+}
+
+
+
+/* Products Section */
+/* Gaya untuk menu */
+#menu {
+    padding: 20px;
+    background-color: #f9f9f9; /* Warna latar belakang yang lembut */
+    text-align: center; /* Menyelaraskan teks ke tengah */
+}
+
+.radio-inputs {
+    position: relative;
+    display: flex;
+    border-radius: 0.5rem;
+    background-color: #2c3e50; /* Warna latar belakang */
+    box-sizing: border-box;
+    font-size: 14px;
+    width: 100%;
+    padding: 1rem 1rem 0 1rem;
+    margin: 0 auto; /* Memusatkan kontainer */
+}
+
+.radio-inputs .radio {
+    margin-right: 15px; /* Jarak antar radio button */
+}
+
+.radio-inputs .radio input {
+    display: none; /* Menyembunyikan input radio */
+}
+
+.radio-inputs .radio .name {
+    display: flex;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+    border: none;
+    padding: 0.5rem 0.8rem;
+    color: whitesmoke ;
+    transition: all 0.15s ease-in-out;
+    position: relative;
+  }
+
+  .radio-inputs .radio input:checked + .name {
+    background-color: #f9f9f9;
+    font-weight: 600;
+    color: #2c3e50;
+  }
+  .radio-inputs .radio input + .name:hover {
+    color: #fff;
+  }
+  .radio-inputs .radio input:checked + .name:hover {
+    color: #1d1d29;
+  }
+  
+  .radio-inputs .radio input:checked + .name::after,
+  .radio-inputs .radio input:checked + .name::before {
+    content: "";
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background-color: #2c3e50;
+    bottom: 0;
+  }
+  
+  .radio-inputs .radio input:checked + .name::after {
+    right: -10px;
+    border-bottom-left-radius: 300px;
+    box-shadow: -3px 3px 0px 3px #f9f9f9;
+  }
+  .radio-inputs .radio input:checked + .name::before {
+    left: -10px;
+    border-bottom-right-radius: 300px;
+    box-shadow: 3px 3px 0px 3px #f9f9f9;
+  }
+  
+
+
+#products {
+    padding: 40px;
+    background-color: #f9f9f9; /* Warna latar belakang yang lembut */
+    text-align: center; /* Menyelaraskan teks ke tengah */
+}
+
+.products {
+    display: flex; /* Menggunakan flexbox untuk tata letak */
+    flex-wrap: wrap; /* Membungkus item jika diperlukan */
+    justify-content: center; /* Menyelaraskan item secara horizontal */
+    max-width: 1200px; /* Lebar maksimum kontainer */
+    margin: auto; /* Memusatkan kontainer */
+}
+
+.product {
+    background-color: white; /* Latar belakang putih untuk setiap produk */
+    border-radius: 10px; /* Sudut melengkung */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Bayangan untuk efek kedalaman */
+    margin: 15px; /* Jarak antar produk */
+    overflow: hidden; /* Menghindari konten meluap */
+    transition: transform 0.3s; /* Transisi untuk efek hover */
+    width: 250px; /* Lebar tetap untuk setiap produk */
+}
+
+.product:hover {
+    transform: scale(1.05); /* Memperbesar produk saat hover */
+}
+
+.product-container {
+    padding: 15px; /* Jarak dalam kontainer produk */
+}
+
+.product-image {
+    width: 100%; /* Mengatur lebar gambar agar responsif */
+    height: auto; /* Menjaga rasio aspek gambar */
+    max-height: 200px; /* Membatasi tinggi maksimum gambar */
+    object-fit: cover; /* Memastikan gambar terpotong dengan baik */
+    cursor: pointer; /* Menunjukkan bahwa gambar dapat diklik */
+    transition: transform 0.3s; /* Transisi untuk efek zoom */
+    border-radius: 10px;
+}
+
+.product-image:hover {
+    transform: scale(1.1); /* Memperbesar gambar saat hover */
+}
+
+.product-image:active {
+    transform: scale(1.0); /* Mengembalikan ukuran gambar saat diklik */
+}
+
+.price {
+    font-size: 1.2em; /* Ukuran font untuk harga */
+    color: #e74c3c; /* Warna merah untuk harga */
+    margin-top: 5px; /* Jarak atas untuk harga */
+}
+
+.product-container p {
+    margin: 10px 0; /* Jarak atas dan bawah */
+}
+
+
+/* Gaya untuk gambar yang diperbesar */
+.enlarged-image {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 70%; /* Batasan lebar maksimum */
+    max-height: 70%; /* Batasan tinggi maksimum */
+    z-index: 1000; /* Memastikan gambar berada di atas konten lainnya */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5); /* Bayangan untuk efek kedalaman */
+    cursor: pointer; /* Menunjukkan bahwa gambar dapat diklik untuk menutup */
+}
+
+
+#featured {
+    padding: 40px;
+    background-color: #f9f9f9; /* Warna latar belakang yang lembut */
+    text-align: center; /* Menyelaraskan teks ke tengah */
+}
+
+.featured-products {
+    display: flex; /* Menggunakan flexbox untuk tata letak */
+    flex-wrap: wrap; /* Membungkus item jika diperlukan */
+    justify-content: center; /* Menyelaraskan item secara horizontal */
+    max-width: 1200px; /* Lebar maksimum kontainer */
+    margin: auto; /* Memusatkan kontainer */
+}
+
+.featured-product {
+    background-color: white; /* Latar belakang putih untuk setiap produk */
+    border-radius: 10px; /* Sudut melengkung */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Bayangan untuk efek kedalaman */
+    margin: 15px; /* Jarak antar produk */
+    overflow: hidden; /* Menghindari konten meluap */
+    transition: transform 0.3s; /* Transisi untuk efek hover */
+    width: 270px; /* Lebar tetap untuk setiap produk */
+    height: 400px; /* Tinggi tetap untuk setiap produk */
+}
+
+.featured-product:hover {
+    transform: scale(1.05); /* Memperbesar produk saat hover */
+}
+
+.featured-product-container {
+    padding: 15px; /* Jarak dalam kontainer produk */
+    height: 100%; /* Memastikan kontainer produk mengisi tinggi produk */
+}
+
+.product-image-featured {
+    width: 100%; /* Mengatur lebar gambar agar responsif */
+    height: auto; /* Mengatur tinggi gambar secara otomatis untuk menjaga rasio aspek */
+    max-height: 300px; /* Membatasi tinggi maksimum gambar */
+    object-fit: contain; /* Memastikan gambar terlihat sepenuhnya tanpa terpotong */
+    cursor: pointer; /* Menunjukkan bahwa gambar dapat diklik */
+    transition: transform 0.3s; /* Transisi untuk efek zoom */
+    border-radius: 10px; /* Sudut melengkung pada gambar */
+}
+
+.product-image-featured:hover {
+    transform: scale(1.1); /* Memperbesar gambar saat hover */
+}
+
+.product-image-featured:active {
+    transform: scale(1.0); /* Mengembalikan ukuran gambar saat diklik */
+}
+
+@keyframes highlight {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.featured-product.highlight {
+    animation: highlight 0.5s ease-in-out infinite;
+}
+
+
+#reviews {
+    padding: 40px;
+    background-color: #f9f9f9; /* Warna latar belakang yang lembut */
+    text-align: center; /* Menyelaraskan teks ke tengah */
+}
+
+
+.reviews {
+    display: flex; /* Menggunakan flexbox untuk tata letak */
+    flex-wrap: wrap; /* Membungkus item jika diperlukan */
+    justify-content: center; /* Menyelaraskan item secara horizontal */
+    max-width: 1200px; /* Lebar maksimum kontainer */
+    margin: auto; /* Memusatkan kontainer */
+}
+
+.review-container {
+    background-color: white; /* Latar belakang putih untuk setiap ulasan */
+    border-radius: 10px; /* Sudut melengkung */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Bayangan halus */
+    margin: 15px; /* Jarak antar ulasan */
+    padding: 20px; /* Jarak dalam ulasan */
+    width: 300px; /* Lebar tetap untuk setiap ulasan */
+    transition: transform 0.3s; /* Transisi untuk efek hover */
+}
+
+.review-container:hover {
+    transform: translateY(-5px); /* Efek angkat saat hover */
+}
+
+.customer-image {
+    width: 80px; /* Ukuran gambar pelanggan */
+    height: 80px; /* Ukuran gambar pelanggan */
+    border-radius: 50%; /* Membuat gambar menjadi bulat */
+    margin-bottom: 15px; /* Jarak bawah gambar */
+}
+
+.review-content p {
+    font-size: 1.2em; /* Ukuran font untuk ulasan */
+    line-height: 1.5; /* Jarak antar baris */
+    margin: 10px 0; /* Jarak atas dan bawah */
+}
+
+.rating {
+    font-size: 1.5em; /* Ukuran font untuk rating */
+    color: #f39c12; /* Warna kuning untuk bintang */
+}
+
+
+/* FAQ Section */
+.faq-item {
+    margin-bottom: 15px;
+    background-color: #eef5ff;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #dce3f0;
+    transition: background-color 0.3s;
+}
+
+.faq-item:hover {
+    background-color: #dce3f0;
+}
+
+.faq-question h3 {
+    margin: 0;
+    color: #2c3e50;
+}
+
+.faq-answer {
+    margin-top: 10px;
+    color: #555;
+}
+
+
+#location {
+    padding: 20px;
+    background-color: #f9f9f9; /* Warna latar belakang */
+    text-align: center; /* Menyelaraskan teks ke tengah */
+}
+
+.map-container {
+    margin: 0 auto; /* Memusatkan kontainer */
+    max-width: 800px; /* Lebar maksimum peta */
+}
+
+.map-container iframe {
+    width: 100%; /* Lebar penuh kontainer */
+    height: 450px; /* Tinggi peta */
+    border: none; /* Menghapus border */
+}
+
+/* Contact Form */
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+form input, form textarea {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+form button {
+    padding: 10px;
+    background-color: #2c3e50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+form button:hover {
+    background-color: #34495e;
+}
+
+/* Footer */
+footer {
+    background-color: #2c3e50;
+    color: white;
+    text-align: center;
+    padding: 20px;
+}
+
+.footer-links a {
+    color: #ecf0f1;
+    margin: 0 10px;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.footer-links a:hover {
+    color: #e74c3c;
+}
+
+/* Scroll to Top */
+#scrollToTop {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #2c3e50;
+    color: white;
+    padding: 10px;
+    border: none;
+    border-radius: 50%;
+    display: none;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+#scrollToTop:hover {
+    background-color: #34495e;
+}
+
+
+
+/* Small Device Adjustments */
+@media (max-width: 576px) {
+    main {
+        margin-top: 100px; /* Sesuaikan dengan tinggi header */
+    }
+    
+    /* Section Styles */
+    section {
+        margin: 10px auto;
+        background: white;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    #home {
+        height: 60vh;
+    }
+    .home-content {
+        padding: 1em;
+    }
+    
+    h1 {
+        font-size: 1.5em; /* Ukuran font untuk judul */
+    }
+    
+    .slogan {
+        font-size: 1em; /* Ukuran font untuk slogan */
+        margin: 10px 0;
+    }
+    
+    .description {
+        font-size: 0.9em; /* Ukuran font untuk deskripsi */
+        line-height: 1.2; /* Jarak antar baris */
+    }
+    
+    #about {
+        padding: 1em;
+    }
+    
+    h2 {
+        font-size: 1.5em; /* Ukuran font untuk judul */
+        margin-top: 0.2em;
+        margin-bottom: 0.5em; /* Jarak bawah judul */
+    }
+    
+    .about-image {
+        width: 35%; /* Mengatur lebar gambar */
+        height: auto; /* Memastikan gambar tetap proporsional */
+        border-radius: 10px; /* Sudut melengkung pada gambar */
+    }
+
+    .about-text {
+        
+        width: 60%; /* Mengatur lebar teks */
+        text-align: left; /* Menyelaraskan teks ke kiri */
+    }
+
+    .about-text p {
+        font-size: 0.8em; /* Ukuran font untuk paragraf */
+        line-height: 1em; /* Jarak antar baris */
+        margin-bottom: 5px; /* Jarak bawah antar paragraf */
+    }
+
+
+        /* Gaya untuk menu */
+    #menu {
+        padding: 0.5em;
+    }
+
+    .radio-inputs {
+        position: relative;
+        display: flex;
+        border-radius: 0.5rem;
+        background-color: #2c3e50; /* Warna latar belakang */
+        box-sizing: border-box;
+        font-size: 9px;
+        width: 100%;
+        padding: 0.5rem 0.5rem 0 0.5rem;
+        margin: 0 auto; /* Memusatkan kontainer */
+    }
+
+    .radio-inputs .radio {
+        margin-right: 5px; /* Jarak antar radio button */
+        margin-bottom: -1px;
+    }
+
+    .radio-inputs .radio .name {
+        padding: 0.5rem 0.18rem;
+    }
+    
+    .radio-inputs .radio input:checked + .name::after,
+    .radio-inputs .radio input:checked + .name::before {
+        content: "";
+        width: 0px;
+    }
+    
+    .radio-inputs .radio input:checked + .name::after {
+        box-shadow: -3px -38px 0px 3px #f9f9f9;
+    }
+    .radio-inputs .radio input:checked + .name::before {
+        box-shadow: 3px -38px 0px 3px #f9f9f9;
+    }
+
+    #products {
+        padding: 10px;
+    }
+
+    .products {
+        display: flex; /* Menggunakan flexbox untuk tata letak */
+        flex-wrap: wrap; /* Membungkus item jika diperlukan */
+        justify-content: center; /* Menyelaraskan item secara horizontal */
+        max-width: 1200px; /* Lebar maksimum kontainer */
+        margin-top: 10px;
+    }
+
+    .product {
+        background-color: white; /* Latar belakang putih untuk setiap produk */
+        border-radius: 10px; /* Sudut melengkung */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Bayangan untuk efek kedalaman */
+        margin: 5px; /* Jarak antar produk */
+        overflow: hidden; /* Menghindari konten meluap */
+        transition: transform 0.3s; /* Transisi untuk efek hover */
+        width: 90px; /* Lebar tetap untuk setiap produk */
+    }
+
+    .product:hover {
+        transform: scale(1.05); /* Memperbesar produk saat hover */
+    }
+
+    .product-container {
+        padding: 5px; /* Jarak dalam kontainer produk */
+    }
+
+    .product-image {
+        max-height: 80px; /* Membatasi tinggi maksimum gambar */
+    }
+
+    .product-container p {
+        font-size: 0.8em;
+        margin: 10px 0; /* Jarak atas dan bawah */
+    }
+
+
+    #featured {
+        padding: 0.5em;
+    }
+    
+    .featured-products {
+        display: flex; /* Menggunakan flexbox untuk tata letak */
+        flex-wrap: wrap; /* Membungkus item jika diperlukan */
+        justify-content: center; /* Menyelaraskan item secara horizontal */
+        max-width: 1200px; /* Lebar maksimum kontainer */
+        margin: auto; /* Memusatkan kontainer */
+    }
+    
+    .featured-product {
+        background-color: white; /* Latar belakang putih untuk setiap produk */
+        border-radius: 10px; /* Sudut melengkung */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Bayangan untuk efek kedalaman */
+        margin: 5px; /* Jarak antar produk */
+        overflow: hidden; /* Menghindari konten meluap */
+        transition: transform 0.3s; /* Transisi untuk efek hover */
+        width: 120px; /* Lebar tetap untuk setiap produk */
+        height: 230px; /* Tinggi tetap untuk setiap produk */
+    }
+    
+    .featured-product:hover {
+        transform: scale(1.05); /* Memperbesar produk saat hover */
+    }
+    
+    .product-image-featured {
+        width: 100%; /* Mengatur lebar gambar agar responsif */
+        height: auto; /* Mengatur tinggi gambar secara otomatis untuk menjaga rasio aspek */
+        max-height: 135px; /* Membatasi tinggi maksimum gambar */
+    }
+    
+    .featured-product p {
+        font-size: 0.9em;
+        margin: 5px 0; /* Jarak atas dan bawah */
+        padding-inline: 10px;
+    }
+    
+    
+    #reviews {
+        padding: 0.5em;
+        }
+    
+    .review-container {
+        margin: 5px; /* Jarak antar ulasan */
+        padding: 5px; /* Jarak dalam ulasan */
+        width: 80px; /* Lebar tetap untuk setiap ulasan */
+        transition: transform 0.3s; /* Transisi untuk efek hover */
+    }
+    
+    .review-container:hover {
+        transform: translateY(-5px); /* Efek angkat saat hover */
+    }
+    
+    .customer-image {
+        width: 70px; /* Ukuran gambar pelanggan */
+        height: 70px; /* Ukuran gambar pelanggan */
+        border-radius: 50%; /* Membuat gambar menjadi bulat */
+        margin-bottom: 15px; /* Jarak bawah gambar */
+    }
+    
+    .review-content p {
+        font-size: 0.8em; /* Ukuran font untuk ulasan */
+        line-height: 1; /* Jarak antar baris */
+        margin: 10px 0; /* Jarak atas dan bawah */
+    }
+    
+    .rating {
+        font-size: 1em; /* Ukuran font untuk rating */
+        color: #f39c12; /* Warna kuning untuk bintang */
+    }
+    
+    
+
+
+}

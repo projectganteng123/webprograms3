@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toko Merchandise Sousou no Frieren</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="images/favicon.jpg" type="image/jpg">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&family=Quicksand:wght@400&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <img src="images/logo.png" alt="Logo Toko Merchandise" />
+            <h1>Toko Merch Sousou no Frieren</h1>
+        </div>
+        <div class="hamburger" id="hamburger">
+            <div class="line"></div>
+            <div class="line"></div>
+            <div class="line"></div>
+        </div>
+        <nav>
+            <ul id="nav-links">
+                <li><a href="#home">Beranda</a></li>
+                <li><a href="#about">Tentang Kami</a></li>
+                <li><a href="#menu">Menu</a></li>
+                <li><a href="#featured">Produk Unggulan</a></li>
+                <li><a href="#reviews">Ulasan</a></li>
+                <li><a href="#faq">FAQ</a></li>
+                <li><a href="#location">Lokasi</a></li>
+                <li><a href="#contact">Kontak</a></li>
+            </ul>
+        </nav>
+    </header>
+    
+    <div class="sidebar" id="sidebar">
+        <ul>
+            <li><a href="#home">Beranda</a></li>
+            <li><a href="#about">Tentang Kami</a></li>
+            <li><a href="#menu">Menu</a></li>
+            <li><a href="#featured">Produk Unggulan</a></li>
+            <li><a href="#reviews">Ulasan</a></li>
+            <li><a href="#faq">FAQ</a></li>
+            <li><a href="#location">Lokasi</a></li>
+            <li><a href="#contact">Kontak</a></li>
+        </ul>
+    </div>
+
+    <main>
+    <section id="home">
+        <div class="home-content">
+            <h1>Selamat Datang di Toko Merchandise Sousou no Frieren</h1>
+            <p class="slogan">Temukan berbagai merchandise menarik dari anime favorit Anda!</p>
+            <p class="description">
+                Kami menyediakan berbagai produk berkualitas tinggi yang terinspirasi oleh anime "Sousou no Frieren". 
+                Dari figur, pakaian, hingga aksesori. Temukan barang-barang unik yang tidak boleh Anda lewatkan!
+            </p>
+        </div>
+    </section>
+
+    <section id="about">
+        
+        <div class="about-container">
+            <img src="images/about-image.jpg" alt="Tentang Kami" class="about-image">
+            <div class="about-text">
+                <h2>Tentang Kami</h2>
+                <p>Kami adalah toko yang menyediakan berbagai merchandise dari anime Sousou no Frieren. Semua produk kami adalah barang import resmi dan dijamin keasliannya.</p>
+                <p>Kami telah melayani pelanggan dari berbagai penjuru Indonesia, dengan jangkauan pengiriman yang luas dan aman.</p>
+                <p>Toko kami terpercaya dengan ribuan pelanggan puas yang terus kembali untuk membeli produk berkualitas.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="menu">
+        <h2>Menu</h2>
+
+        <div class="radio-inputs">
+            <label class="radio">
+                <input type="radio" name="category" checked="" value="all" checked onclick="filterCategory('all')" />
+                <span class="name">Semua</span>
+            </label>
+            <label class="radio">
+                <input type="radio" name="category"  value="cosplay" onclick="filterCategory('cosplay')" />
+                <span class="name">Cosplay</span>
+            </label>
+            <label class="radio">
+                <input type="radio" name="category" value="t-shirt" onclick="filterCategory('t-shirt')" />
+                <span class="name">T-Shirt</span>
+            </label>
+            <label class="radio">
+                <input type="radio" name="category"  value="keychain" onclick="filterCategory('keychain')" />
+                <span class="name">Keychain</span>
+            </label>
+            <label class="radio">
+                <input type="radio" name="category"  value="action-figure" onclick="filterCategory('action-figure')" />
+                <span class="name">Action Figure</span>
+            </label>
+            <label class="radio">
+                <input type="radio" name="category"  value="lainnya" onclick="filterCategory('lainnya')" />
+                <span class="name">Lainnya</span>
+            </label>
+        </div>
+        
+        <div class="products">
+            <div class="product" data-category="cosplay">
+                <div class="product-container">
+                    <img src="images/Product/cosplay1.webp" alt="Cosplay 1" class="product-image">
+                    <p>Cosplay Sousou no Frieren 1</p>
+                    <p class="price">Rp 300,000</p>
+                </div>
+            </div>
+            <div class="product" data-category="cosplay">
+                <div class="product-container">
+                    <img src="images/Product/cosplay2.webp" alt="Cosplay 2" class="product-image">
+                    <p>Cosplay Sousou no Frieren 2</p>
+                    <p class="price">Rp 320,000</p>
+                </div>
+            </div>
+            <div class="product" data-category="t-shirt">
+                <div class="product-container">
+                    <img src="images/Product/tshirt1.webp" alt="T-Shirt 1" class="product-image">
+                    <p>T-Shirt Sousou no Frieren 1</p>
+                    <p class="price">Rp 150,000</p>
+                </div>
+            </div>
+            <div class="product" data-category="t-shirt">
+                <div class="product-container">
+                    <img src="images/Product/tshirt2.jpeg" alt="T-Shirt 2" class="product-image">
+                    <p>T-Shirt Sousou no Frieren 2</p>
+                    <p class="price">Rp 180,000</p>
+                </div>
+            </div>
+            <div class="product" data-category="keychain">
+                <div class="product-container">
+                    <img src="images/Product/keychain1.jpg" alt="Keychain 1" class="product-image">
+                    <p>Keychain Sousou no Frieren 1</p>
+                    <p class="price">Rp 25,000</p>
+                </div>
+            </div>
+            <div class="product" data-category="keychain">
+                <div class="product-container">
+                    <img src="images/Product/keychain2.jpg" alt="Keychain 2" class="product-image">
+                    <p>Keychain Sousou no Frieren 2</p>
+                    <p class="price">Rp 30,000</p>
+                </div>
+            </div>
+            <div class="product" data-category="action-figure">
+                <div class="product-container">
+                    <img src="images/Product/actionfigure1.jpg" alt="Action Figure 1" class="product-image">
+                    <p>Action Figure Sousou no Frieren 1</p>
+                    <p class="price">Rp 500,000</p>
+                </div>
+            </div>
+            <div class="product" data-category="action-figure">
+                <div class="product-container">
+                    <img src="images/Product/actionfigure2.jpeg" alt="Action Figure 2" class="product-image">
+                    <p>Action Figure Sousou no Frieren 2</p>
+                    <p class="price">Rp 550,000</p>
+                </div>
+            </div>
+            <div class="product" data-category="action-figure">
+                <div class="product-container">
+                    <img src="images/Product/actionfigure3.jpeg" alt="Action Figure 3" class="product-image">
+                    <p>Action Figure Sousou no Frieren 3</p>
+                    <p class="price">Rp 600,000</p>
+                </div>
+            </div>
+            <div class="product" data-category="lainnya">
+                <div class="product-container">
+                    <img src="images/Product/other1.jpg" alt="Lainnya 1" class="product-image">
+                    <p>Produk Lainnya 1</p>
+                    <p class="price">Rp 100,000</p>
+                </div>
+            </div>
+            <div class="product" data-category="lainnya">
+                <div class="product-container">
+                    <img src="images/Product/other2.jpg" alt="Lainnya 2" class="product-image">
+                    <p>Produk Lainnya 2</p>
+                    <p class="price">Rp 120,000</p>
+                </div>
+            </div>
+            <div class="product" data-category="lainnya">
+                <div class="product-container">
+                    <img src="images/Product/other3.jpg" alt="Lainnya 3" class="product-image">
+                    <p>Produk Lainnya 3</p>
+                    <p class="price">Rp 130,000</p>
+                </div>
+            </div>
+            <div class="product" data-category="lainnya">
+                <div class="product-container">
+                    <img src="images/Product/other4.jpg" alt="Lainnya 4" class="product-image">
+                    <p>Produk Lainnya 4</p>
+                    <p class="price">Rp 140,000</p>
+                </div>
+            </div>
+            <div class="product" data-category="cosplay">
+                <div class="product-container">
+                    <img src="images/Product/cosplay3.jpg" alt="Cosplay 3" class="product-image">
+                    <p>Cosplay Sousou no Frieren 3</p>
+                    <p class="price">Rp 350,000</p>
+                </div>
+            </div>
+            <div class="product" data-category="lainnya">
+                <div class="product-container">
+                    <img src="images/Product/other4.jpeg" alt="Lainnya 4" class="product-image">
+                    <p>T-Shirt Sousou no Frieren 3</p>
+                    <p class="price">Rp 200,000</p>
+                </div>
+            </div>
+            
+    </section>
+
+    <section id="featured">
+        <h2>Produk Unggulan</h2>
+        <div class="featured-products">
+            <div class="featured-product">
+                <img src="images/Product/actionfigure1.jpg" alt="Produk Unggulan 1" class="product-image-featured">
+                <p>Limited Edition Action Figure</p>
+                <p class="price">Rp 750,000</p>
+            </div>
+            <div class="featured-product">
+                <img src="images/Product/bluray1.jpeg" alt="Produk Unggulan 2" class="product-image-featured">
+                <p>Exclusive T-Shirt</p>
+                <p class="price">Rp 200,000</p>
+            </div>
+            <div class="featured-product">
+                <img src="images/Product/painting1.jpg" alt="Produk Unggulan 3" class="product-image-featured">
+                <p>Special Edition Poster</p>
+                <p class="price">Rp 100,000</p>
+            </div>
+            <div class="featured-product">
+                <img src="images/Product/smollkeychain1.webp" alt="Produk Unggulan 4" class="product-image-featured">
+                <p>Collectible Keychain</p>
+                <p class="price">Rp 25,000</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="reviews">
+        <h2>Ulasan Pelanggan</h2>
+        <div class="reviews">
+            <div class="review-container">
+                <img src="images/customer1.webp" alt="Customer 1" class="customer-image">
+                <div class="review-content">
+                    <div class="rating">★★★★★</div>
+                    <p>"Pelayanan cepat dan barang sesuai ekspektasi!"</p>
+                    <p>- Freya, Jakarta</p>
+                </div>
+            </div>
+            <div class="review-container">
+                <img src="images/customer2.webp" alt="Customer 2" class="customer-image">
+                <div class="review-content">
+                    <div class="rating">★★★★★</div>
+                    <p>"Barang berkualitas, pasti akan belanja lagi."</p>
+                    <p>- Bruno, Bandung</p>
+                </div>
+            </div>
+            <div class="review-container">
+                <img src="images/customer3.webp" alt="Customer 3" class="customer-image">
+                <div class="review-content">
+                    <div class="rating">★★★★★</div>
+                    <p>"Sangat puas dengan action figure yang saya beli."</p>
+                    <p>- Erico, Surabaya</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="faq">
+        <h2>FAQ</h2>
+        <div class="faq-item">
+            <div class="faq-question">
+                <h3>Apakah produk dijamin asli?</h3>
+            </div>
+            <div class="faq-answer">
+                <p>Ya, semua produk kami adalah barang import resmi.</p>
+            </div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-question">
+                <h3>Berapa lama waktu pengiriman?</h3>
+            </div>
+            <div class="faq-answer">
+                <p>Pengiriman biasanya memakan waktu 3-7 hari kerja tergantung lokasi Anda.</p>
+            </div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-question">
+                <h3>Bagaimana cara melacak pesanan saya?</h3>
+            </div>
+            <div class="faq-answer">
+                <p>Setelah pesanan dikirim, kami akan memberikan nomor resi yang bisa Anda gunakan untuk melacak pengiriman.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="location">
+        <h2>Lokasi Kami</h2>
+        <div class="map-container">
+            <iframe 
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3965.616424628253!2d107.13802367480396!3d-6.3140139936753155!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e699a6bdc21798f%3A0xba26090bb27d9d80!2sUniversitas%20Bina%20Sarana%20Informatika%20Kampus%20Cikarang%20(UBSI%20Cikarang)!5e0!3m2!1sid!2sid!4v1736605332533!5m2!1sid!2sid" 
+                width="600" 
+                height="450" 
+                style="border:0;" 
+                allowfullscreen="" 
+                loading="lazy">
+            </iframe>
+        </div>
+    </section>
+
+    <section id="contact">
+        <h2>Kontak Kami</h2>
+        <form>
+            <label for="name">Nama:</label>
+            <input type="text" id="name" name="name" required>
+            
+            <label for="message">Pesan:</label>
+            <textarea id="message" name="message" required></textarea>
+            
+            <button type="submit">Kirim via WhatsApp</button>
+        </form>
+    </section>
+
+    <footer>
+        <p>&copy; 2023 Toko Merchandise Sousou no Frieren</p>
+        <div class="footer-links">
+            <a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a>
+        </div>
+        <div class="social-media">
+            <a href="#"><img src="images/icons8-facebook-48.png" alt="Facebook"></a>
+            <a href="#"><img src="images/icons8-x-48.png" alt="Twitter"></a>
+            <a href="#"><img src="images/icons8-instagram-48.png" alt="Instagram"></a>
+        </div>
+        <button id="scrollToTop">Scroll to Top</button>
+    </footer>
+
+    <script src="script.js"></script>
+</main>
+</body>
+</html>
