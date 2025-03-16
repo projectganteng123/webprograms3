@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Attendance System</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- HTML5 QR Code Scanner -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .textarea-container {
+            height: calc(100vh - 400px);
+            min-height: 200px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">QR Code Attendance System</h1>
+            <p class="text-gray-600">Scan QR codes to track student attendance and send automated messages</p>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Left Column: QR Scanner -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-semibold mb-4">QR Scanner</h2>
+            
+            <!-- Video Feed untuk Kamera -->
+            <div id="camera-feed" class="relative w-full h-[300px] bg-gray-200 rounded-lg overflow-hidden mb-4">
+                <video id="camera-video" class="w-full h-full object-cover"></video>
+            </div>
+
+            <!-- Tombol Aktifkan Kamera -->
+            <button 
+                id="btnActivateCamera" 
+                class="mt-4 bg-purple-600 text-white py-3 px-6 rounded-lg hover:bg-purple-700 transition-colors duration-200 flex items-center justify-center gap-2"
+            >
+                <i class="fas fa-camera"></i>
+                Aktifkan Kamera
+            </button>
+
+            <div id="notification" class="mt-4 p-4 rounded-md hidden"></div>
+        </div>
+
+            <!-- Right Column: Controls -->
+            <div class="space-y-6">
+                <!-- Scan Results -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h2 class="text-xl font-semibold mb-4">Scan Results</h2>
+                    <textarea 
+                        id="scanResults" 
+                        class="w-full p-3 border rounded-md textarea-container resize-none"
+                        placeholder="Scanned results will appear here..."
+                        readonly
+                    ></textarea>
+                </div>
+
+
+                <!-- Message Template -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h2 class="text-xl font-semibold mb-4">Message Template</h2>
+                    <textarea 
+                        id="messageTemplate" 
+                        class="w-full p-3 border rounded-md h-32 resize-none"
+                        placeholder="Enter your message template here. Use 'NamaSiswa' and 'Tanggal DD-MM hh:mm' as placeholders."
+                    >Halo NamaSiswa,
+Kehadiran telah tercatat pada Tanggal DD-MM hh:mm.
+Terima kasih atas partisipasinya hari ini.</textarea>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex gap-4">
+                    <button 
+                        id="btnRekap" 
+                        class="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center justify-center gap-2"
+                    >
+                        <i class="fas fa-list-ul"></i>
+                        Rekap
+                    </button>
+                    <button 
+                        id="btnKirimPesan" 
+                        class="flex-1 bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition-colors duration-200 flex items-center justify-center gap-2"
+                    >
+                        <i class="fab fa-whatsapp"></i>
+                        Kirim Pesan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+document.addEventListener('DOMContentLoaded', function() {
+    // DOM Elements
+    const scanResults = document.getElementById('scanResults');
+    const messageTemplate = document.getElementById('messageTemplate');
+    const btnRekap = document.getElementById('btnRekap');
+    const btnKirimPesan = document.getElementById('btnKirimPesan');
+    const notification = document.getElementById('notification');
+    const btnActivateCamera = document.getElementById('btnActivateCamera'); // Tombol baru
+    const cameraFeed = document.getElementById('camera-feed'); // Wadah video
+    const cameraVideo = document.getElementById('camera-video'); // Elemen video
+
+    // Load saved data from localStorage
+    scanResults.value = localStorage.getItem('scanResults') || '';
+    messageTemplate.value = localStorage.getItem('messageTemplate') || messageTemplate.value;
+
+    // Variable to track if the scanner is active
+    let scannerActive = false;
+    let html5QrcodeScanner;
+
+    // Success callback when QR is scanned
+    function onScanSuccess(decodedText, decodedResult) {
+        try {
+            // Validate QR format (assuming "Nama - ID" format)
+            if (!decodedText.includes(' - ')) {
+                showNotification('Invalid QR format. Expected: "Nama - ID"', 'error');
+                return;
+            }
+
+            // Add timestamp to the scan
+            const now = new Date();
+            const timestamp = now.toLocaleString('id-ID', {
+                day: '2-digit',
+                month: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            });
+
+            // Append the new scan to existing results
+            const newScan = `${decodedText} (${timestamp})\n`;
+            scanResults.value += newScan;
+
+            // Save to localStorage
+            localStorage.setItem('scanResults', scanResults.value);
+
+            // Show success notification
+            showNotification('QR Code berhasil discan!', 'success');
+        } catch (error) {
+            console.error('Error processing scan:', error);
+            showNotification('Error processing scan', 'error');
+        }
+    }
+
+    function onScanFailure(error) {
+        // We'll only log scan failures, not show them to avoid spam
+        console.warn(`QR Scan error: ${error}`);
+    }
+
+    // Handle Activate Camera button click
+    btnActivateCamera.addEventListener('click', async function() {
+        if (scannerActive) return;
+
+        try {
+            // Check camera permission
+            const permissionStatus = await navigator.permissions.query({ name: 'camera' });
+
+            if (permissionStatus.state === 'denied') {
+                showNotification('Akses kamera ditolak. Silakan izinkan akses kamera di pengaturan browser.', 'error');
+                return;
+            }
+
+            if (permissionStatus.state === 'prompt') {
+                // Request camera access and start video stream
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                cameraVideo.srcObject = stream; // Set video source to camera stream
+                cameraVideo.play(); // Start playing the video
+
+                // Initialize QR Scanner
+                html5QrcodeScanner = new Html5QrcodeScanner(
+                    "qr-reader",
+                    { fps: 10, qrbox: { width: 250, height: 250 } }
+                );
+                html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+                scannerActive = true;
+
+                // Update button text and disable it
+                btnActivateCamera.textContent = 'Kamera Aktif';
+                btnActivateCamera.disabled = true;
+                btnActivateCamera.classList.add('bg-gray-400', 'cursor-not-allowed');
+            }
+        } catch (error) {
+            console.error('Error accessing camera:', error);
+            showNotification('Gagal mengakses kamera. Pastikan perangkat memiliki kamera dan izin telah diberikan.', 'error');
+        }
+    });
+
+    // Notification helper
+    function showNotification(message, type) {
+        notification.textContent = message;
+        notification.className = 'mt-4 p-4 rounded-md';
+        
+        if (type === 'success') {
+            notification.classList.add('bg-green-100', 'text-green-700');
+        } else {
+            notification.classList.add('bg-red-100', 'text-red-700');
+        }
+
+        notification.classList.remove('hidden');
+        
+        // Hide notification after 3 seconds
+        setTimeout(() => {
+            notification.classList.add('hidden');
+        }, 3000);
+    }
+
+    // Handle Rekap button click
+    btnRekap.addEventListener('click', function() {
+        if (!scanResults.value.trim()) {
+            showNotification('Tidak ada data untuk direkap', 'error');
+            return;
+        }
+
+        const rekapText = `Rekapan:\n${scanResults.value}`;
+        
+        // Copy to clipboard
+        navigator.clipboard.writeText(rekapText).then(
+            function() {
+                showNotification('Rekapan berhasil disalin ke clipboard!', 'success');
+            },
+            function(err) {
+                showNotification('Gagal menyalin rekapan', 'error');
+                console.error('Could not copy text: ', err);
+            }
+        );
+    });
+
+    // Handle Kirim Pesan button click
+    btnKirimPesan.addEventListener('click', function() {
+        if (!scanResults.value.trim()) {
+            showNotification('Tidak ada data untuk dikirim', 'error');
+            return;
+        }
+
+        const scans = scanResults.value.trim().split('\n');
+        const template = messageTemplate.value;
+
+        // Save template to localStorage
+        localStorage.setItem('messageTemplate', template);
+
+        // Process each scan
+        scans.forEach(scan => {
+            try {
+                // Extract name and ID
+                const match = scan.match(/(.*) - (\d+)/);
+                if (!match) return;
+
+                const [_, name, id] = match;
+                
+                // Get current date-time
+                const now = new Date();
+                const dateTime = now.toLocaleString('id-ID', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                });
+
+                // Replace placeholders in template
+                let message = template
+                    .replace(/NamaSiswa/g, name)
+                    .replace(/Tanggal DD-MM hh:mm/g, dateTime);
+
+                // Encode message for URL
+                const encodedMessage = encodeURIComponent(message);
+
+                // Open WhatsApp with the message
+                window.open(`https://wa.me/${id}?text=${encodedMessage}`, '_blank');
+            } catch (error) {
+                console.error('Error processing message:', error);
+                showNotification('Error saat memproses pesan', 'error');
+            }
+        });
+    });
+
+    // Save message template when it changes
+    messageTemplate.addEventListener('input', function() {
+        localStorage.setItem('messageTemplate', this.value);
+    });
+});
+    </script>
+</body>
+</html>
