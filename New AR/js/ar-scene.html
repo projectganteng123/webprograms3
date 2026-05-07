@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AR Scene</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html, body { width:100%; height:100%; overflow:hidden; background:transparent; }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.2/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.min.js"></script>
+</head>
+<body>
+
+  <a-scene
+    id="ar-scene"
+    arjs="
+      sourceType: webcam;
+      debugUIEnabled: false;
+      detectionMode: mono;
+      patternRatio: 0.75;
+      maxDetectionRate: 60;
+    "
+    renderer="antialias: true; alpha: true; logarithmicDepthBuffer: true;"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false"
+  >
+    <a-assets id="scene-assets" timeout="15000"></a-assets>
+    <!--
+      camera: tanpa cursor/raycaster agar tidak ada event yang
+      mengganggu atau mematikan tracking saat rotasi
+    -->
+    <a-entity camera></a-entity>
+  </a-scene>
+
+  <script>
+    const MARKER_DEFS = {
+      hiro:    { preset: 'hiro' },
+      kanji:   { preset: 'kanji' },
+      letterA: { preset: 'custom', url: 'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/data/pattern-files/pattern-letterA.patt' },
+      letterB: { preset: 'custom', url: 'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/data/pattern-files/pattern-letterB.patt' },
+      letterC: { preset: 'custom', url: 'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/data/pattern-files/pattern-letterC.patt' },
+      letterD: { preset: 'custom', url: 'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/data/pattern-files/pattern-letterD.patt' },
+    };
+
+    let currentModelSrc  = null;
+    let currentModelType = 'glb';
+
+    window.addEventListener('message', (e) => {
+      const { type, payload } = e.data || {};
+      if (!type) return;
+      if (type === 'REBUILD') rebuildScene(payload);
+    });
+
+    function rebuildScene({ markers, controls, modelSrc, modelType }) {
+      if (modelSrc) {
+        currentModelSrc  = modelSrc;
+        currentModelType = modelType || 'glb';
+      }
+
+      const scene = document.getElementById('ar-scene');
+      scene.querySelectorAll('a-marker').forEach(el => el.remove());
+
+      if (!currentModelSrc || !markers || markers.length === 0) return;
+
+      const { scale, height, rotate } = controls;
+
+      markers.forEach(marker => {
+        const def = MARKER_DEFS[marker.type] || MARKER_DEFS['hiro'];
+
+        const aMarker = document.createElement('a-marker');
+
+        if (def.preset === 'hiro' || def.preset === 'kanji') {
+          aMarker.setAttribute('preset', def.preset);
+        } else {
+          aMarker.setAttribute('preset', 'custom');
+          aMarker.setAttribute('type', 'pattern');
+          aMarker.setAttribute('url', def.url);
+        }
+
+        // Smooth: nilai rendah = lebih responsif, tidak mudah hilang
+        aMarker.setAttribute('smooth', 'true');
+        aMarker.setAttribute('smoothCount', '3');         // default 5, turunkan = lebih cepat lock
+        aMarker.setAttribute('smoothTolerance', '0.01');
+        aMarker.setAttribute('smoothThreshold', '2');
+
+        // minConfidence: turunkan dari default 0.6 → lebih mudah terdeteksi
+        aMarker.setAttribute('minConfidence', '0.4');
+
+        // Saat marker tidak terlihat, tahan posisi terakhir selama N ms
+        // sebelum benar-benar hilang — mencegah flicker saat gerak kecil
+        aMarker.setAttribute('markerhandler', '');
+
+        const entity = document.createElement('a-entity');
+        entity.setAttribute('scale',    `${scale} ${scale} ${scale}`);
+        entity.setAttribute('position', `0 ${height} 0`);
+        entity.setAttribute('rotation', `0 ${rotate} 0`);
+
+        // Matikan raycaster di objek agar tidak menangkap event klik/touch
+        // yang bisa mengganggu render loop
+        entity.setAttribute('raycaster',  'enabled: false');
+        entity.setAttribute('cursor',     'rayOrigin: none');
+
+        if (currentModelType === 'obj') {
+          entity.setAttribute('obj-model', `obj: url(${currentModelSrc})`);
+        } else {
+          entity.setAttribute('gltf-model', `url(${currentModelSrc})`);
+        }
+
+        aMarker.appendChild(entity);
+        scene.appendChild(aMarker);
+      });
+    }
+
+    // Komponen custom: tahan visibilitas marker selama 300ms setelah hilang
+    // agar tidak kedip-kedip saat tracking sesaat terganggu
+    AFRAME.registerComponent('markerhandler', {
+      init() {
+        this.hideTimeout = null;
+        this.el.addEventListener('markerFound', () => {
+          if (this.hideTimeout) {
+            clearTimeout(this.hideTimeout);
+            this.hideTimeout = null;
+          }
+          // Tampilkan semua children
+          Array.from(this.el.children).forEach(c => { c.object3D.visible = true; });
+        });
+        this.el.addEventListener('markerLost', () => {
+          // Tunda sembunyikan 300ms — objek tidak langsung hilang
+          this.hideTimeout = setTimeout(() => {
+            Array.from(this.el.children).forEach(c => { c.object3D.visible = false; });
+          }, 300);
+        });
+      }
+    });
+  </script>
+</body>
+</html>
