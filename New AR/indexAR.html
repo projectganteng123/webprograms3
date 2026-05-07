@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>AR Viewer</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- ─── iframe AR Scene (paling belakang, fullscreen) ─────── -->
+  <!--
+    allow="camera" wajib agar browser meneruskan izin kamera ke iframe.
+    iframe ini HANYA berisi A-Frame + AR.js, tidak ada UI sama sekali.
+    Semua UI ada di halaman ini, di atas iframe.
+  -->
+  <iframe
+    id="ar-frame"
+    src="ar-scene.html"
+    allow="camera; microphone; gyroscope; accelerometer"
+    allowfullscreen
+  ></iframe>
+
+  <!-- ─── Top Bar ─────────────────────────────────────────────── -->
+  <header id="top-bar">
+    <h1>AR Viewer</h1>
+    <button id="btn-settings" onclick="UI.openPanel()">
+      <i class="ti ti-settings" aria-hidden="true"></i> Pengaturan
+    </button>
+  </header>
+
+  <!-- ─── Status Bar ───────────────────────────────────────────── -->
+  <div id="status-bar">Menunggu kamera siap…</div>
+
+  <!-- ─── Panel Backdrop ──────────────────────────────────────── -->
+  <div id="panel-backdrop" onclick="UI.closePanel()"></div>
+
+  <!-- ─── Settings Panel ──────────────────────────────────────── -->
+  <aside id="settings-panel">
+    <div class="panel-header">
+      <h2>Pengaturan</h2>
+      <button id="btn-close-panel" onclick="UI.closePanel()">
+        <i class="ti ti-x" aria-hidden="true"></i>
+      </button>
+    </div>
+
+    <p class="section-title">Model 3D</p>
+    <div class="model-upload-box">
+      <p>Format: .glb / .gltf / .obj</p>
+      <label class="btn-upload-label" for="model-file-input">
+        <i class="ti ti-upload" aria-hidden="true"></i> Pilih File
+      </label>
+      <input type="file" id="model-file-input" accept=".glb,.gltf,.obj" style="display:none" />
+      <span id="model-filename">Belum ada model — coba arrow.glb dari repo</span>
+    </div>
+
+    <p class="section-title">Kontrol Objek</p>
+    <div class="controls-box">
+      <div class="control-row">
+        <span class="control-label">Ukuran</span>
+        <input type="range" id="ctrl-scale" min="0.1" max="3" step="0.1" value="1" />
+        <span class="control-val" id="val-scale">1.0</span>
+      </div>
+      <div class="control-row">
+        <span class="control-label">Tinggi</span>
+        <input type="range" id="ctrl-height" min="-1" max="2" step="0.05" value="0" />
+        <span class="control-val" id="val-height">0.00</span>
+      </div>
+      <div class="control-row">
+        <span class="control-label">Rotasi</span>
+        <input type="range" id="ctrl-rotate" min="0" max="360" step="5" value="0" />
+        <span class="control-val" id="val-rotate">0°</span>
+      </div>
+    </div>
+
+    <p class="section-title">Daftar Marker</p>
+    <div class="marker-list" id="marker-list"></div>
+    <button id="btn-add-marker" onclick="UI.openAddModal()">
+      <i class="ti ti-plus" aria-hidden="true"></i> Tambah Marker
+    </button>
+  </aside>
+
+  <!-- ─── Modal: Tambah Marker ─────────────────────────────────── -->
+  <div id="modal-add" class="modal-overlay">
+    <div class="modal-card">
+      <h3>Tambah Marker</h3>
+      <div class="form-group">
+        <label for="input-name">NAMA MARKER</label>
+        <input type="text" id="input-name" placeholder="contoh: Meja Belajar" autocomplete="off" />
+      </div>
+      <div class="form-group">
+        <label for="input-type">TIPE MARKER</label>
+        <select id="input-type">
+          <option value="hiro">Hiro (paling stabil)</option>
+          <option value="kanji">Kanji</option>
+          <option value="letterA">Letter A</option>
+          <option value="letterB">Letter B</option>
+          <option value="letterC">Letter C</option>
+          <option value="letterD">Letter D</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="UI.closeAddModal()">Batal</button>
+        <button class="btn-confirm" onclick="UI.addMarker()">Tambah</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Modal: Download Marker ───────────────────────────────── -->
+  <div id="modal-download" class="modal-overlay">
+    <div class="modal-card">
+      <h3>Download Marker</h3>
+      <p id="dl-title" style="font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:8px;"></p>
+      <div class="download-preview">
+        <img id="dl-img" src="" alt="Preview marker" />
+      </div>
+      <p class="download-note">
+        Print & tempel di permukaan datar.<br/>
+        Ukuran ideal: <strong>8×8 cm</strong> atau lebih besar.
+      </p>
+      <a id="dl-link" href="#" download class="btn-download">
+        <i class="ti ti-download" aria-hidden="true"></i> Download PNG
+      </a>
+      <button class="btn-cancel" onclick="UI.closeDownloadModal()" style="width:100%;margin-top:8px;">Tutup</button>
+    </div>
+  </div>
+
+  <script src="js/store.js"></script>
+  <script src="js/ar.js"></script>
+  <script src="js/ui.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      AR.init();
+      UI.init();
+      AR.updateStatus();
+    });
+  </script>
+
+</body>
+</html>
