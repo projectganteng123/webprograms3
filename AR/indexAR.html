@@ -6,130 +6,85 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>AR Viewer</title>
-
-  <!-- Icons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
-
-  <!-- Styles -->
   <link rel="stylesheet" href="css/style.css" />
-
-  <!--
-    A-Frame + AR.js dimuat di sini.
-    PENTING: AR.js harus dimuat SETELAH A-Frame.
-    Versi A-Frame 1.4.2 lebih stabil dengan AR.js di mobile.
-  -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.2/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.min.js"></script>
 </head>
 <body>
 
-  <!-- ─── Start Screen (muncul sebelum kamera aktif) ─────────── -->
-  <div id="start-screen" role="main">
-    <h1>📷 AR Viewer</h1>
-    <p>Izinkan akses kamera untuk mulai melihat objek 3D di atas marker.</p>
-    <button id="btn-start-camera">Aktifkan Kamera</button>
-    <div id="cam-error" role="alert"></div>
-    <p style="font-size:11px;color:rgba(255,255,255,0.2);margin-top:16px;">
-      Pastikan dibuka via HTTPS (GitHub Pages)
-    </p>
-  </div>
-
-  <!-- ─── AR Scene ────────────────────────────────────────────── -->
+  <!-- ─── iframe AR Scene (paling belakang, fullscreen) ─────── -->
   <!--
-    Catatan konfigurasi penting:
-    - sourceType: webcam       → pakai kamera HP
-    - debugUIEnabled: false    → hilangkan debug overlay AR.js
-    - detectionMode: mono      → mode marker hitam-putih (paling stabil)
-    - vr-mode-ui: disabled     → sembunyikan tombol VR bawaan A-Frame
-    - renderer: antialias      → objek 3D lebih halus
+    allow="camera" wajib agar browser meneruskan izin kamera ke iframe.
+    iframe ini HANYA berisi A-Frame + AR.js, tidak ada UI sama sekali.
+    Semua UI ada di halaman ini, di atas iframe.
   -->
-  <a-scene
-    id="ar-scene"
-    embedded
-    arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
-    renderer="logarithmicDepthBuffer: true; antialias: true; alpha: true;"
-    vr-mode-ui="enabled: false"
-    device-orientation-permission-ui="enabled: false"
-  >
-    <a-assets></a-assets>
-    <!-- Marker entity akan di-inject oleh ar.js -->
-    <a-entity camera></a-entity>
-  </a-scene>
+  <iframe
+    id="ar-frame"
+    src="ar-scene.html"
+    allow="camera; microphone; gyroscope; accelerometer"
+    allowfullscreen
+  ></iframe>
 
   <!-- ─── Top Bar ─────────────────────────────────────────────── -->
   <header id="top-bar">
     <h1>AR Viewer</h1>
-    <button id="btn-settings" onclick="UI.openPanel()" aria-label="Buka pengaturan">
+    <button id="btn-settings" onclick="UI.openPanel()">
       <i class="ti ti-settings" aria-hidden="true"></i> Pengaturan
     </button>
   </header>
 
   <!-- ─── Status Bar ───────────────────────────────────────────── -->
-  <div id="status-bar" aria-live="polite">Aktifkan kamera terlebih dahulu</div>
+  <div id="status-bar">Menunggu kamera siap…</div>
 
   <!-- ─── Panel Backdrop ──────────────────────────────────────── -->
-  <div id="panel-backdrop" onclick="UI.closePanel()" aria-hidden="true"></div>
+  <div id="panel-backdrop" onclick="UI.closePanel()"></div>
 
   <!-- ─── Settings Panel ──────────────────────────────────────── -->
-  <aside id="settings-panel" aria-label="Panel pengaturan AR">
+  <aside id="settings-panel">
     <div class="panel-header">
       <h2>Pengaturan</h2>
-      <button id="btn-close-panel" onclick="UI.closePanel()" aria-label="Tutup panel">
+      <button id="btn-close-panel" onclick="UI.closePanel()">
         <i class="ti ti-x" aria-hidden="true"></i>
       </button>
     </div>
 
-    <!-- Upload Model -->
     <p class="section-title">Model 3D</p>
     <div class="model-upload-box">
       <p>Format: .glb / .gltf / .obj</p>
       <label class="btn-upload-label" for="model-file-input">
         <i class="ti ti-upload" aria-hidden="true"></i> Pilih File
       </label>
-      <input
-        type="file"
-        id="model-file-input"
-        accept=".glb,.gltf,.obj"
-        style="display:none"
-        aria-label="Upload model 3D"
-      />
-      <span id="model-filename">Belum ada model</span>
+      <input type="file" id="model-file-input" accept=".glb,.gltf,.obj" style="display:none" />
+      <span id="model-filename">Belum ada model — coba arrow.glb dari repo</span>
     </div>
 
-    <!-- Kontrol Objek -->
     <p class="section-title">Kontrol Objek</p>
-    <div class="controls-box" role="group" aria-label="Kontrol tampilan objek 3D">
+    <div class="controls-box">
       <div class="control-row">
         <span class="control-label">Ukuran</span>
-        <input type="range" id="ctrl-scale" min="0.1" max="3" step="0.1" value="1"
-               aria-label="Ukuran objek" aria-valuemin="0.1" aria-valuemax="3" />
-        <span class="control-val" id="val-scale" aria-live="polite">1.0</span>
+        <input type="range" id="ctrl-scale" min="0.1" max="3" step="0.1" value="1" />
+        <span class="control-val" id="val-scale">1.0</span>
       </div>
       <div class="control-row">
         <span class="control-label">Tinggi</span>
-        <input type="range" id="ctrl-height" min="-1" max="2" step="0.05" value="0"
-               aria-label="Tinggi objek" aria-valuemin="-1" aria-valuemax="2" />
-        <span class="control-val" id="val-height" aria-live="polite">0.00</span>
+        <input type="range" id="ctrl-height" min="-1" max="2" step="0.05" value="0" />
+        <span class="control-val" id="val-height">0.00</span>
       </div>
       <div class="control-row">
         <span class="control-label">Rotasi</span>
-        <input type="range" id="ctrl-rotate" min="0" max="360" step="5" value="0"
-               aria-label="Rotasi objek" aria-valuemin="0" aria-valuemax="360" />
-        <span class="control-val" id="val-rotate" aria-live="polite">0°</span>
+        <input type="range" id="ctrl-rotate" min="0" max="360" step="5" value="0" />
+        <span class="control-val" id="val-rotate">0°</span>
       </div>
     </div>
 
-    <!-- Daftar Marker -->
     <p class="section-title">Daftar Marker</p>
-    <div class="marker-list" id="marker-list" role="list"></div>
-
-    <button id="btn-add-marker" onclick="UI.openAddModal()" aria-label="Tambah marker baru">
+    <div class="marker-list" id="marker-list"></div>
+    <button id="btn-add-marker" onclick="UI.openAddModal()">
       <i class="ti ti-plus" aria-hidden="true"></i> Tambah Marker
     </button>
   </aside>
 
   <!-- ─── Modal: Tambah Marker ─────────────────────────────────── -->
-  <div id="modal-add" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Tambah marker baru">
+  <div id="modal-add" class="modal-overlay">
     <div class="modal-card">
       <h3>Tambah Marker</h3>
       <div class="form-group">
@@ -155,71 +110,32 @@
   </div>
 
   <!-- ─── Modal: Download Marker ───────────────────────────────── -->
-  <div id="modal-download" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Download marker">
+  <div id="modal-download" class="modal-overlay">
     <div class="modal-card">
       <h3>Download Marker</h3>
-      <p style="font-size:11px;color:rgba(255,255,255,0.35);margin-bottom:8px;" id="dl-title"></p>
+      <p id="dl-title" style="font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:8px;"></p>
       <div class="download-preview">
         <img id="dl-img" src="" alt="Preview marker" />
       </div>
       <p class="download-note">
-        Print gambar ini & tempel di permukaan datar.<br/>
+        Print & tempel di permukaan datar.<br/>
         Ukuran ideal: <strong>8×8 cm</strong> atau lebih besar.
       </p>
       <a id="dl-link" href="#" download class="btn-download">
         <i class="ti ti-download" aria-hidden="true"></i> Download PNG
       </a>
-      <button class="btn-cancel" onclick="UI.closeDownloadModal()" style="width:100%;margin-top:8px;">
-        Tutup
-      </button>
+      <button class="btn-cancel" onclick="UI.closeDownloadModal()" style="width:100%;margin-top:8px;">Tutup</button>
     </div>
   </div>
 
-  <!-- ─── Scripts (urutan penting!) ───────────────────────────── -->
-  <script src="js/store.js"></script>   <!-- 1. Data store -->
-  <script src="js/camera.js"></script>  <!-- 2. Fix kamera mobile -->
-  <script src="js/ar.js"></script>      <!-- 3. Kontrol AR scene -->
-  <script src="js/ui.js"></script>      <!-- 4. UI dan interaksi -->
-
+  <script src="js/store.js"></script>
+  <script src="js/ar.js"></script>
+  <script src="js/ui.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      Camera.init();
       AR.init();
       UI.init();
       AR.updateStatus();
-
-      // AR.js / A-Frame inject inline style yang menimpa z-index.
-      // Paksa ulang setiap 500ms selama 5 detik pertama.
-      let attempts = 0;
-      const fixLayers = setInterval(() => {
-        attempts++;
-
-        // Semua canvas & video AR ke belakang
-        document.querySelectorAll(
-          'a-scene, a-scene canvas, a-scene video, #arjs-video, video'
-        ).forEach(el => {
-          el.style.setProperty('z-index', '1', 'important');
-          el.style.setProperty('pointer-events', 'none', 'important');
-          el.style.setProperty('position', 'fixed', 'important');
-        });
-
-        // UI selalu di depan
-        const layers = {
-          'start-screen':  1000,
-          'top-bar':        500,
-          'status-bar':     500,
-          'panel-backdrop': 600,
-          'settings-panel': 700,
-          'modal-add':      800,
-          'modal-download': 800,
-        };
-        Object.entries(layers).forEach(([id, z]) => {
-          const el = document.getElementById(id);
-          if (el) el.style.setProperty('z-index', String(z), 'important');
-        });
-
-        if (attempts >= 10) clearInterval(fixLayers);
-      }, 500);
     });
   </script>
 
