@@ -182,12 +182,44 @@
   <script src="js/ui.js"></script>      <!-- 4. UI dan interaksi -->
 
   <script>
-    // Boot semua modul setelah DOM siap
     document.addEventListener('DOMContentLoaded', () => {
-      Camera.init();   // Siapkan tombol kamera + error handling
-      AR.init();       // Dengarkan Store, rebuild scene otomatis
-      UI.init();       // Render UI awal, pasang event listener
+      Camera.init();
+      AR.init();
+      UI.init();
       AR.updateStatus();
+
+      // AR.js / A-Frame inject inline style yang menimpa z-index.
+      // Paksa ulang setiap 500ms selama 5 detik pertama.
+      let attempts = 0;
+      const fixLayers = setInterval(() => {
+        attempts++;
+
+        // Semua canvas & video AR ke belakang
+        document.querySelectorAll(
+          'a-scene, a-scene canvas, a-scene video, #arjs-video, video'
+        ).forEach(el => {
+          el.style.setProperty('z-index', '1', 'important');
+          el.style.setProperty('pointer-events', 'none', 'important');
+          el.style.setProperty('position', 'fixed', 'important');
+        });
+
+        // UI selalu di depan
+        const layers = {
+          'start-screen':  1000,
+          'top-bar':        500,
+          'status-bar':     500,
+          'panel-backdrop': 600,
+          'settings-panel': 700,
+          'modal-add':      800,
+          'modal-download': 800,
+        };
+        Object.entries(layers).forEach(([id, z]) => {
+          const el = document.getElementById(id);
+          if (el) el.style.setProperty('z-index', String(z), 'important');
+        });
+
+        if (attempts >= 10) clearInterval(fixLayers);
+      }, 500);
     });
   </script>
 
