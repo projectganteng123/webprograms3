@@ -1,55 +1,59 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>AR Scene</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
-    a-scene { width: 100% !important; height: 100% !important; }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html, body { width:100%; height:100%; overflow:hidden; background:transparent; }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.2/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.min.js"></script>
 </head>
 <body>
+
   <a-scene
     id="ar-scene"
-    embedded
     arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
-    renderer="logarithmicDepthBuffer: true; antialias: true; alpha: true;"
+    renderer="antialias: true; alpha: true;"
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false"
   >
-    <a-assets></a-assets>
+    <a-assets id="scene-assets" timeout="10000"></a-assets>
     <a-entity camera></a-entity>
   </a-scene>
 
   <script>
-    // Terima perintah dari halaman induk (indexAR.html) via postMessage
+    const MARKER_DEFS = {
+      hiro:    { preset: 'hiro' },
+      kanji:   { preset: 'kanji' },
+      letterA: { preset: 'custom', url: 'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/data/pattern-files/pattern-letterA.patt' },
+      letterB: { preset: 'custom', url: 'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/data/pattern-files/pattern-letterB.patt' },
+      letterC: { preset: 'custom', url: 'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/data/pattern-files/pattern-letterC.patt' },
+      letterD: { preset: 'custom', url: 'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/data/pattern-files/pattern-letterD.patt' },
+    };
+
+    // model yg sudah di-load (base64 data URL atau path relatif)
+    let currentModelSrc  = null;
+    let currentModelType = 'glb';
+
     window.addEventListener('message', (e) => {
       const { type, payload } = e.data || {};
       if (!type) return;
-
       if (type === 'REBUILD') rebuildScene(payload);
     });
 
-    function rebuildScene({ markers, controls, modelURL, modelType }) {
-      const scene = document.getElementById('ar-scene');
+    function rebuildScene({ markers, controls, modelSrc, modelType }) {
+      if (modelSrc) {
+        currentModelSrc  = modelSrc;
+        currentModelType = modelType || 'glb';
+      }
 
-      // Hapus marker lama
+      const scene = document.getElementById('ar-scene');
       scene.querySelectorAll('a-marker').forEach(el => el.remove());
 
-      if (!modelURL || !markers || markers.length === 0) return;
-
-      const MARKER_DEFS = {
-        hiro:    { preset: 'hiro' },
-        kanji:   { preset: 'kanji' },
-        letterA: { preset: 'custom', url: 'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/data/pattern-files/pattern-letterA.patt' },
-        letterB: { preset: 'custom', url: 'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/data/pattern-files/pattern-letterB.patt' },
-        letterC: { preset: 'custom', url: 'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/data/pattern-files/pattern-letterC.patt' },
-        letterD: { preset: 'custom', url: 'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/data/pattern-files/pattern-letterD.patt' },
-      };
+      if (!currentModelSrc || !markers || markers.length === 0) return;
 
       const { scale, height, rotate } = controls;
 
@@ -73,10 +77,10 @@
         entity.setAttribute('position', `0 ${height} 0`);
         entity.setAttribute('rotation', `0 ${rotate} 0`);
 
-        if (modelType === 'obj') {
-          entity.setAttribute('obj-model', `obj: url(${modelURL})`);
+        if (currentModelType === 'obj') {
+          entity.setAttribute('obj-model', `obj: url(${currentModelSrc})`);
         } else {
-          entity.setAttribute('gltf-model', `url(${modelURL})`);
+          entity.setAttribute('gltf-model', `url(${currentModelSrc})`);
         }
 
         aMarker.appendChild(entity);
