@@ -1,6 +1,6 @@
 /**
- * ar.js — Kirim perintah ke iframe ar-scene.html via postMessage.
- * Tidak ada A-Frame di sini — semua AR logic ada di dalam iframe.
+ * ar.js — Kirim state ke iframe ar-scene.html via postMessage.
+ * Model dikirim sebagai base64 data URL agar bisa diakses iframe.
  */
 
 const AR = (() => {
@@ -9,19 +9,18 @@ const AR = (() => {
     return document.getElementById('ar-frame');
   }
 
-  // Kirim state terbaru ke iframe untuk rebuild scene
   function rebuild() {
     const frame = getFrame();
     if (!frame || !frame.contentWindow) return;
 
-    const modelURL  = Store.getModelObjectURL();
-    const modelType = Store.getModelFileType();
-    const markers   = Store.getMarkers();
-    const controls  = Store.getControls();
-
     frame.contentWindow.postMessage({
       type: 'REBUILD',
-      payload: { markers, controls, modelURL, modelType }
+      payload: {
+        markers:   Store.getMarkers(),
+        controls:  Store.getControls(),
+        modelSrc:  Store.getModelDataURL(),   // base64 data URL, aman lintas iframe
+        modelType: Store.getModelFileType(),
+      }
     }, '*');
 
     updateStatus();
@@ -30,31 +29,29 @@ const AR = (() => {
   function updateStatus() {
     const el = document.getElementById('status-bar');
     if (!el) return;
-    const modelURL = Store.getModelObjectURL();
-    const markers  = Store.getMarkers();
+    const hasModel   = !!Store.getModelDataURL();
+    const numMarkers = Store.getMarkers().length;
 
-    if (!modelURL) {
+    if (!hasModel) {
       el.textContent = 'Upload model 3D di menu Pengaturan';
-    } else if (markers.length === 0) {
+    } else if (numMarkers === 0) {
       el.textContent = 'Tambah marker di menu Pengaturan';
     } else {
-      el.textContent = `${markers.length} marker aktif — arahkan kamera ke marker`;
+      el.textContent = `${numMarkers} marker aktif — arahkan kamera ke marker`;
     }
   }
 
   function init() {
-    // Setelah iframe selesai load, langsung kirim state awal
     const frame = getFrame();
     if (frame) {
       frame.addEventListener('load', () => {
-        // Tunggu sebentar agar A-Frame di iframe siap
-        setTimeout(rebuild, 1500);
+        // Tunggu A-Frame di iframe siap (~2 detik)
+        setTimeout(rebuild, 2000);
       });
     }
 
-    // Dengarkan perubahan Store
     Store.onChange((changed) => {
-      if (changed === 'markers' || changed === 'controls' || changed === 'model') {
+      if (['markers', 'controls', 'model'].includes(changed)) {
         rebuild();
       }
     });

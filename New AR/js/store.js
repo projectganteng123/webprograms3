@@ -1,53 +1,43 @@
 /**
  * store.js — Satu-satunya tempat data disimpan.
- * Semua modul lain baca/tulis data lewat fungsi di sini.
- * Data di-persist ke localStorage secara otomatis.
+ * Model file dibaca sebagai base64 agar bisa dikirim ke iframe via postMessage.
  */
 
 const STORAGE_KEY = 'ar_web_state';
 
 const DEFAULT_STATE = {
-  markers: [],          // [{ id, name, type }]
-  objControls: {
-    scale:  1.0,        // ukuran objek (0.1 – 3.0)
-    height: 0.0,        // posisi Y / tinggi (-1.0 – 2.0)
-    rotate: 0,          // rotasi Y (0 – 360 derajat)
-  },
-  modelFileName: null,  // nama file model yang di-upload (untuk ditampilkan di UI)
+  markers: [],
+  objControls: { scale: 1.0, height: 0.0, rotate: 0 },
+  modelFileName: null,
 };
 
-// Runtime state (tidak di-persist): object URL dari file upload
-let _modelObjectURL = null;
-let _modelFileType  = null; // 'glb' | 'obj'
+// Runtime: base64 data URL model (tidak di-persist, terlalu besar)
+let _modelDataURL  = null;
+let _modelFileType = null;
 
-// Muat state dari localStorage, fallback ke default
 function _loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return JSON.parse(JSON.stringify(DEFAULT_STATE));
     const saved = JSON.parse(raw);
-    // Merge dengan default agar key baru tidak hilang
     return {
       ...DEFAULT_STATE,
       ...saved,
       objControls: { ...DEFAULT_STATE.objControls, ...(saved.objControls || {}) },
     };
-  } catch {
-    return JSON.parse(JSON.stringify(DEFAULT_STATE));
-  }
+  } catch { return JSON.parse(JSON.stringify(DEFAULT_STATE)); }
 }
 
 let _state = _loadState();
 
 function _persist() {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(_state));
-  } catch {
-    console.warn('[store] localStorage tidak tersedia.');
-  }
+    // Jangan simpan modelDataURL (bisa sangat besar)
+    const toSave = { ..._state };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+  } catch(e) { console.warn('[store] localStorage error:', e); }
 }
 
-// ─── Listeners ───────────────────────────────────────────────
 const _listeners = [];
 function onChange(fn) { _listeners.push(fn); }
 function _notify(changed) { _listeners.forEach(fn => fn(changed, _state)); }
@@ -79,30 +69,28 @@ function setControl(key, value) {
   _notify('controls');
 }
 
-// ─── Model (runtime, tidak di-persist) ───────────────────────
+// ─── Model — baca sebagai base64 data URL ────────────────────
 function setModelFile(file) {
-  if (_modelObjectURL) URL.revokeObjectURL(_modelObjectURL);
-  _modelObjectURL = URL.createObjectURL(file);
-  _modelFileType  = file.name.split('.').pop().toLowerCase() === 'obj' ? 'obj' : 'glb';
+  const ext = file.name.split('.').pop().toLowerCase();
+  _modelFileType = ext === 'obj' ? 'obj' : 'glb';
   _state.modelFileName = file.name;
-  _persist(); // simpan nama file saja (bukan data biner)
-  _notify('model');
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    _modelDataURL = e.target.result; // "data:model/gltf-binary;base64,..."
+    _persist();
+    _notify('model');
+  };
+  reader.readAsDataURL(file);
 }
 
-function getModelObjectURL() { return _modelObjectURL; }
-function getModelFileType()  { return _modelFileType; }
-function getModelFileName()  { return _state.modelFileName; }
+function getModelDataURL()  { return _modelDataURL; }
+function getModelFileType() { return _modelFileType; }
+function getModelFileName() { return _state.modelFileName; }
 
-// ─── Export ──────────────────────────────────────────────────
 window.Store = {
-  getMarkers,
-  addMarker,
-  removeMarker,
-  getControls,
-  setControl,
-  setModelFile,
-  getModelObjectURL,
-  getModelFileType,
-  getModelFileName,
+  getMarkers, addMarker, removeMarker,
+  getControls, setControl,
+  setModelFile, getModelDataURL, getModelFileType, getModelFileName,
   onChange,
 };
