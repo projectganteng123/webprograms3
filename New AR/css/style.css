@@ -1,0 +1,417 @@
+/* style.css — Seluruh tampilan UI AR Viewer (iframe architecture) */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --c-bg:            #0a0a0f;
+  --c-surface:       #13131a;
+  --c-surface2:      rgba(255,255,255,0.05);
+  --c-border:        rgba(255,255,255,0.10);
+  --c-border2:       rgba(255,255,255,0.18);
+  --c-text:          #ffffff;
+  --c-muted:         rgba(255,255,255,0.45);
+  --c-hint:          rgba(255,255,255,0.25);
+  --c-accent:        #63d2ff;
+  --c-accent-bg:     rgba(99,210,255,0.10);
+  --c-accent-border: rgba(99,210,255,0.28);
+  --c-danger:        #ff6b6b;
+  --radius-sm:       6px;
+  --radius-md:       10px;
+  --radius-lg:       14px;
+}
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: #000;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  color: var(--c-text);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ─── iframe AR (paling belakang, fullscreen) ───────────────── */
+#ar-frame {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  z-index: 1;           /* paling belakang */
+  display: block;
+  background: #000;
+}
+
+/* ─── Semua UI di atas iframe ───────────────────────────────── */
+#top-bar        { z-index: 100; }
+#status-bar     { z-index: 100; }
+#panel-backdrop { z-index: 200; }
+#settings-panel { z-index: 300; }
+.modal-overlay  { z-index: 400; }
+
+/* ─── Top Bar ───────────────────────────────────────────────── */
+#top-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.72) 0%, transparent 100%);
+  pointer-events: none;
+}
+
+#top-bar h1 {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+#btn-settings {
+  pointer-events: auto;
+  background: rgba(255,255,255,0.14);
+  border: 1px solid rgba(255,255,255,0.24);
+  color: var(--c-text);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.2s;
+}
+#btn-settings:hover { background: rgba(255,255,255,0.22); }
+
+/* ─── Status Bar ────────────────────────────────────────────── */
+#status-bar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  padding: 14px 20px;
+  background: linear-gradient(to top, rgba(0,0,0,0.68) 0%, transparent 100%);
+  color: var(--c-hint);
+  font-size: 12px;
+  text-align: center;
+  pointer-events: none;
+}
+
+/* ─── Panel Backdrop ────────────────────────────────────────── */
+#panel-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+}
+#panel-backdrop.open { display: block; }
+
+/* ─── Settings Panel ────────────────────────────────────────── */
+#settings-panel {
+  position: fixed;
+  top: 0; right: -340px;
+  width: 300px;
+  max-width: 88vw;
+  height: 100%;
+  background: var(--c-surface);
+  border-left: 1px solid var(--c-border);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px;
+  transition: right 0.28s cubic-bezier(0.4,0,0.2,1);
+  -webkit-overflow-scrolling: touch;
+}
+#settings-panel.open { right: 0; }
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--c-border);
+}
+.panel-header h2 { font-size: 14px; font-weight: 600; }
+
+#btn-close-panel {
+  background: none; border: none;
+  color: var(--c-muted); font-size: 20px;
+  cursor: pointer; line-height: 1; padding: 2px 4px;
+}
+
+.section-title {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--c-hint);
+  margin-bottom: 10px;
+}
+
+/* ─── Upload Model ───────────────────────────────────────────── */
+.model-upload-box {
+  background: var(--c-surface2);
+  border: 1px dashed var(--c-border2);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  text-align: center;
+  margin-bottom: 18px;
+}
+.model-upload-box p {
+  font-size: 12px;
+  color: var(--c-muted);
+  margin-bottom: 10px;
+}
+.btn-upload-label {
+  display: inline-block;
+  background: var(--c-accent-bg);
+  border: 1px solid var(--c-accent-border);
+  color: var(--c-accent);
+  padding: 7px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-upload-label:hover { background: rgba(99,210,255,0.18); }
+
+#model-filename {
+  display: block;
+  font-size: 11px;
+  color: var(--c-hint);
+  margin-top: 8px;
+  word-break: break-all;
+}
+
+/* ─── Kontrol Slider ─────────────────────────────────────────── */
+.controls-box {
+  background: var(--c-surface2);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  margin-bottom: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.control-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.control-label {
+  font-size: 11px;
+  color: var(--c-muted);
+  width: 48px;
+  flex-shrink: 0;
+}
+.control-row input[type="range"] {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 2px;
+  outline: none;
+}
+.control-row input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--c-accent);
+  cursor: pointer;
+  box-shadow: 0 0 0 3px rgba(99,210,255,0.20);
+}
+.control-row input[type="range"]::-moz-range-thumb {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--c-accent);
+  border: none; cursor: pointer;
+}
+.control-val {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--c-accent);
+  width: 36px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ─── Daftar Marker ──────────────────────────────────────────── */
+.marker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 12px;
+}
+.marker-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--c-surface2);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  padding: 9px 11px;
+}
+.marker-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.marker-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.marker-type { font-size: 11px; color: var(--c-hint); }
+.marker-actions { display: flex; gap: 5px; flex-shrink: 0; }
+
+.btn-icon {
+  width: 32px; height: 32px;
+  background: rgba(255,255,255,0.06);
+  border: none;
+  color: var(--c-muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+.btn-icon:hover { background: rgba(255,255,255,0.12); color: var(--c-text); }
+.btn-icon.danger:hover { background: rgba(255,80,80,0.15); color: var(--c-danger); }
+
+.empty-hint {
+  font-size: 12px;
+  color: var(--c-hint);
+  text-align: center;
+  padding: 14px 0;
+}
+
+/* ─── Tombol Tambah Marker ───────────────────────────────────── */
+#btn-add-marker {
+  width: 100%;
+  padding: 11px;
+  background: var(--c-accent-bg);
+  border: 1px solid var(--c-accent-border);
+  border-radius: var(--radius-md);
+  color: var(--c-accent);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.2s;
+}
+#btn-add-marker:hover { background: rgba(99,210,255,0.18); }
+
+/* ─── Modal Overlay ──────────────────────────────────────────── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.72);
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+
+.modal-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border2);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  width: 100%;
+  max-width: 288px;
+}
+.modal-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 16px; }
+
+/* ─── Form ───────────────────────────────────────────────────── */
+.form-group { margin-bottom: 13px; }
+.form-group label {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--c-hint);
+  margin-bottom: 6px;
+}
+.form-group input,
+.form-group select {
+  width: 100%;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--c-border2);
+  border-radius: var(--radius-sm);
+  color: var(--c-text);
+  padding: 9px 12px;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.form-group input:focus,
+.form-group select:focus { border-color: var(--c-accent); }
+.form-group select option { background: #1a1a25; }
+
+.modal-actions { display: flex; gap: 8px; margin-top: 4px; }
+
+.btn-cancel {
+  flex: 1; padding: 10px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  color: var(--c-muted);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-cancel:hover { background: rgba(255,255,255,0.10); }
+
+.btn-confirm {
+  flex: 1; padding: 10px;
+  background: var(--c-accent-bg);
+  border: 1px solid var(--c-accent-border);
+  border-radius: var(--radius-sm);
+  color: var(--c-accent);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-confirm:hover { background: rgba(99,210,255,0.18); }
+
+/* ─── Download Modal ─────────────────────────────────────────── */
+.download-preview {
+  width: 140px; height: 140px;
+  margin: 0 auto 12px;
+  background: #fff;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.download-preview img { width: 100%; height: 100%; object-fit: contain; }
+
+.download-note {
+  font-size: 11px;
+  color: var(--c-hint);
+  text-align: center;
+  margin-top: 4px;
+  line-height: 1.6;
+}
+
+.btn-download {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px;
+  background: var(--c-accent-bg);
+  border: 1px solid var(--c-accent-border);
+  border-radius: var(--radius-sm);
+  color: var(--c-accent);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  margin-top: 10px;
+  transition: background 0.15s;
+}
+.btn-download:hover { background: rgba(99,210,255,0.18); }
