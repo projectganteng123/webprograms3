@@ -6,12 +6,20 @@
   <title>AR Scene</title>
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
-    html, body { width:100%; height:100%; overflow:hidden; background:transparent; }
+    html, body { width:100%; height:100%; overflow:hidden; background:#000; }
+    #status-msg {
+      position:fixed; bottom:12px; left:50%; transform:translateX(-50%);
+      background:rgba(0,0,0,0.7); color:#fff; font-size:12px;
+      padding:6px 14px; border-radius:20px; font-family:sans-serif;
+      pointer-events:none; z-index:99; white-space:nowrap;
+    }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.2/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.min.js"></script>
 </head>
 <body>
+
+  <div id="status-msg">Memilih kamera…</div>
 
   <a-scene
     id="ar-scene"
@@ -27,14 +35,129 @@
     device-orientation-permission-ui="enabled: false"
   >
     <a-assets id="scene-assets" timeout="15000"></a-assets>
-    <!--
-      camera: tanpa cursor/raycaster agar tidak ada event yang
-      mengganggu atau mematikan tracking saat rotasi
-    -->
     <a-entity camera></a-entity>
   </a-scene>
 
   <script>
+    // ─── Pilih kamera wide/utama, bukan telefoto ──────────────
+    //
+    // HP multi-kamera (misal Samsung S/Ultra, Pixel, dll) mengekspos
+    // beberapa deviceId. AR.js hanya minta facingMode:environment dan
+    // browser sering memilih kamera salah (zoom/telefoto).
+    //
+    // Strategi:
+    // 1. Enumerate semua video input devices
+    // 2. Cari yang labelnya mengandung kata wide/main/0 (kamera utama)
+    // 3. Kalau tidak ketemu, ambil kamera environment PERTAMA (index 0)
+    //    — biasanya kamera utama terdaftar pertama
+    // 4. Set stream itu ke video element yang dibuat AR.js
+    //
+    async function pickBestCamera() {
+      setStatus('Meminta izin kamera…');
+
+      // Minta izin dulu agar label kamera terisi (sebelum izin label = "")
+      let initStream;
+      try {
+        initStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' } },
+          audio: false
+        });
+      } catch(e) {
+        setStatus('❌ Izin kamera ditolak');
+        return null;
+      }
+
+      // Enumerate setelah dapat izin
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const cameras = devices.filter(d => d.kind === 'videoinput');
+
+      // Hentikan stream sementara
+      initStream.getTracks().forEach(t => t.stop());
+
+      setStatus(`Ditemukan ${cameras.length} kamera, memilih yang terbaik…`);
+      console.log('[AR] Kamera tersedia:', cameras.map(c => `${c.label} (${c.deviceId.slice(0,8)})`));
+
+      // Cari kamera wide/main berdasarkan label
+      const wideKeywords = ['wide', 'main', 'back', 'rear', '0', 'camera2 0', 'ultrawide'];
+      const zoomKeywords = ['telephoto', 'tele', 'zoom', 'periscope', '2x', '3x', '5x', '10x'];
+
+      // Filter keluar kamera zoom/telefoto
+      const nonZoom = cameras.filter(c => {
+        const label = c.label.toLowerCase();
+        return !zoomKeywords.some(kw => label.includes(kw));
+      });
+
+      // Dari yang tersisa, prioritaskan yang labelnya ada kata "wide" atau "main"
+      let chosen = nonZoom.find(c => {
+        const label = c.label.toLowerCase();
+        return wideKeywords.some(kw => label.includes(kw));
+      });
+
+      // Fallback: kamera environment pertama dari nonZoom
+      if (!chosen && nonZoom.length > 0) chosen = nonZoom[0];
+
+      // Fallback terakhir: kamera pertama saja
+      if (!chosen) chosen = cameras[0];
+
+      console.log('[AR] Kamera dipilih:', chosen?.label);
+      return chosen?.deviceId || null;
+    }
+
+    async function startCameraStream(deviceId) {
+      const constraints = deviceId
+        ? { video: { deviceId: { exact: deviceId }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false }
+        : { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      return stream;
+    }
+
+    function setStatus(msg) {
+      const el = document.getElementById('status-msg');
+      if (el) { el.textContent = msg; el.style.display = 'block'; }
+    }
+    function hideStatus() {
+      const el = document.getElementById('status-msg');
+      if (el) el.style.display = 'none';
+    }
+
+    // Tunggu AR.js membuat elemen <video>, lalu ganti stream-nya
+    function injectStreamToArjs(stream) {
+      const inject = () => {
+        // AR.js buat video dengan id "arjs-video" atau video pertama di body
+        const vid = document.querySelector('#arjs-video') || document.querySelector('video');
+        if (vid) {
+          // Pause stream bawaan AR.js dulu
+          if (vid.srcObject) {
+            vid.srcObject.getTracks().forEach(t => t.stop());
+          }
+          vid.srcObject = stream;
+          vid.play().catch(() => {});
+          const track = stream.getVideoTracks()[0];
+          const label = track?.label || 'kamera';
+          setStatus('📷 ' + label.slice(0, 40));
+          setTimeout(hideStatus, 3000);
+          console.log('[AR] Stream diinjeksi ke video AR.js:', label);
+        } else {
+          setTimeout(inject, 200);
+        }
+      };
+      inject();
+    }
+
+    // Boot: pilih kamera lalu inject
+    (async () => {
+      try {
+        const deviceId = await pickBestCamera();
+        const stream   = await startCameraStream(deviceId);
+        injectStreamToArjs(stream);
+      } catch(e) {
+        setStatus('❌ Gagal akses kamera: ' + e.message);
+        console.error('[AR] Camera error:', e);
+      }
+    })();
+
+    // ─── AR scene logic ───────────────────────────────────────
     const MARKER_DEFS = {
       hiro:    { preset: 'hiro' },
       kanji:   { preset: 'kanji' },
@@ -61,7 +184,6 @@
 
       const scene = document.getElementById('ar-scene');
       scene.querySelectorAll('a-marker').forEach(el => el.remove());
-
       if (!currentModelSrc || !markers || markers.length === 0) return;
 
       const { scale, height, rotate } = controls;
@@ -70,7 +192,6 @@
         const def = MARKER_DEFS[marker.type] || MARKER_DEFS['hiro'];
 
         const aMarker = document.createElement('a-marker');
-
         if (def.preset === 'hiro' || def.preset === 'kanji') {
           aMarker.setAttribute('preset', def.preset);
         } else {
@@ -78,29 +199,18 @@
           aMarker.setAttribute('type', 'pattern');
           aMarker.setAttribute('url', def.url);
         }
-
-        // Smooth: nilai rendah = lebih responsif, tidak mudah hilang
         aMarker.setAttribute('smooth', 'true');
-        aMarker.setAttribute('smoothCount', '3');         // default 5, turunkan = lebih cepat lock
+        aMarker.setAttribute('smoothCount', '3');
         aMarker.setAttribute('smoothTolerance', '0.01');
         aMarker.setAttribute('smoothThreshold', '2');
-
-        // minConfidence: turunkan dari default 0.6 → lebih mudah terdeteksi
         aMarker.setAttribute('minConfidence', '0.4');
-
-        // Saat marker tidak terlihat, tahan posisi terakhir selama N ms
-        // sebelum benar-benar hilang — mencegah flicker saat gerak kecil
         aMarker.setAttribute('markerhandler', '');
 
         const entity = document.createElement('a-entity');
         entity.setAttribute('scale',    `${scale} ${scale} ${scale}`);
         entity.setAttribute('position', `0 ${height} 0`);
         entity.setAttribute('rotation', `0 ${rotate} 0`);
-
-        // Matikan raycaster di objek agar tidak menangkap event klik/touch
-        // yang bisa mengganggu render loop
-        entity.setAttribute('raycaster',  'enabled: false');
-        entity.setAttribute('cursor',     'rayOrigin: none');
+        entity.setAttribute('raycaster', 'enabled: false');
 
         if (currentModelType === 'obj') {
           entity.setAttribute('obj-model', `obj: url(${currentModelSrc})`);
@@ -113,21 +223,14 @@
       });
     }
 
-    // Komponen custom: tahan visibilitas marker selama 300ms setelah hilang
-    // agar tidak kedip-kedip saat tracking sesaat terganggu
     AFRAME.registerComponent('markerhandler', {
       init() {
         this.hideTimeout = null;
         this.el.addEventListener('markerFound', () => {
-          if (this.hideTimeout) {
-            clearTimeout(this.hideTimeout);
-            this.hideTimeout = null;
-          }
-          // Tampilkan semua children
+          if (this.hideTimeout) { clearTimeout(this.hideTimeout); this.hideTimeout = null; }
           Array.from(this.el.children).forEach(c => { c.object3D.visible = true; });
         });
         this.el.addEventListener('markerLost', () => {
-          // Tunda sembunyikan 300ms — objek tidak langsung hilang
           this.hideTimeout = setTimeout(() => {
             Array.from(this.el.children).forEach(c => { c.object3D.visible = false; });
           }, 300);
