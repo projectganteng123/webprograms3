@@ -12,6 +12,7 @@
       background:rgba(0,0,0,0.7); color:#fff; font-size:12px;
       padding:6px 14px; border-radius:20px; font-family:sans-serif;
       pointer-events:none; z-index:99; white-space:nowrap;
+      transition: opacity 0.5s;
     }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.2/aframe.min.js"></script>
@@ -19,7 +20,30 @@
 </head>
 <body>
 
-  <div id="status-msg">Memilih kamera…</div>
+  <div id="status-msg">Memulai kamera…</div>
+
+  <!--
+    PENTING: sourceType: webcam diset agar AR.js tetap setup pipeline-nya.
+    Kita TIDAK override stream AR.js — kita biarkan AR.js pakai kameranya sendiri,
+    tapi kita paksa constraint deviceId lewat sourceWidth/Height dan
+    memanfaatkan facingMode yang lebih spesifik.
+    
+    Pendekatan baru: pakai sourceType: video, arahkan ke <video> hidden
+    yang sudah kita isi dengan stream kamera pilihan kita.
+  -->
+  <video
+    id="cam-video"
+    autoplay
+    muted
+    playsinline
+    style="
+      position:fixed;
+      top:0; left:0;
+      width:100%; height:100%;
+      object-fit:cover;
+      z-index:0;
+    "
+  ></video>
 
   <a-scene
     id="ar-scene"
@@ -33,129 +57,158 @@
     renderer="antialias: true; alpha: true; logarithmicDepthBuffer: true;"
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false"
+    style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:1; background:transparent;"
   >
     <a-assets id="scene-assets" timeout="15000"></a-assets>
     <a-entity camera></a-entity>
   </a-scene>
 
+  <div id="status-msg">Memilih kamera terbaik…</div>
+
   <script>
     // ─── Pilih kamera wide/utama, bukan telefoto ──────────────
     //
-    // HP multi-kamera (misal Samsung S/Ultra, Pixel, dll) mengekspos
-    // beberapa deviceId. AR.js hanya minta facingMode:environment dan
-    // browser sering memilih kamera salah (zoom/telefoto).
-    //
-    // Strategi:
-    // 1. Enumerate semua video input devices
-    // 2. Cari yang labelnya mengandung kata wide/main/0 (kamera utama)
-    // 3. Kalau tidak ketemu, ambil kamera environment PERTAMA (index 0)
-    //    — biasanya kamera utama terdaftar pertama
-    // 4. Set stream itu ke video element yang dibuat AR.js
-    //
-    async function pickBestCamera() {
-      setStatus('Meminta izin kamera…');
-
-      // Minta izin dulu agar label kamera terisi (sebelum izin label = "")
-      let initStream;
-      try {
-        initStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: 'environment' } },
-          audio: false
-        });
-      } catch(e) {
-        setStatus('❌ Izin kamera ditolak');
-        return null;
-      }
-
-      // Enumerate setelah dapat izin
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const cameras = devices.filter(d => d.kind === 'videoinput');
-
-      // Hentikan stream sementara
-      initStream.getTracks().forEach(t => t.stop());
-
-      setStatus(`Ditemukan ${cameras.length} kamera, memilih yang terbaik…`);
-      console.log('[AR] Kamera tersedia:', cameras.map(c => `${c.label} (${c.deviceId.slice(0,8)})`));
-
-      // Cari kamera wide/main berdasarkan label
-      const wideKeywords = ['wide', 'main', 'back', 'rear', '0', 'camera2 0', 'ultrawide'];
-      const zoomKeywords = ['telephoto', 'tele', 'zoom', 'periscope', '2x', '3x', '5x', '10x'];
-
-      // Filter keluar kamera zoom/telefoto
-      const nonZoom = cameras.filter(c => {
-        const label = c.label.toLowerCase();
-        return !zoomKeywords.some(kw => label.includes(kw));
-      });
-
-      // Dari yang tersisa, prioritaskan yang labelnya ada kata "wide" atau "main"
-      let chosen = nonZoom.find(c => {
-        const label = c.label.toLowerCase();
-        return wideKeywords.some(kw => label.includes(kw));
-      });
-
-      // Fallback: kamera environment pertama dari nonZoom
-      if (!chosen && nonZoom.length > 0) chosen = nonZoom[0];
-
-      // Fallback terakhir: kamera pertama saja
-      if (!chosen) chosen = cameras[0];
-
-      console.log('[AR] Kamera dipilih:', chosen?.label);
-      return chosen?.deviceId || null;
-    }
-
-    async function startCameraStream(deviceId) {
-      const constraints = deviceId
-        ? { video: { deviceId: { exact: deviceId }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false }
-        : { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false };
-
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      return stream;
-    }
+    // Strategi baru yang lebih aman:
+    // 1. Biarkan AR.js pakai webcam default-nya (agar pipeline tidak rusak)
+    // 2. Secara paralel, cari deviceId kamera wide terbaik
+    // 3. Ganti stream di video element AR.js SETELAH AR.js selesai setup
+    //    (tunggu event 'camera-initialized' dari a-scene)
 
     function setStatus(msg) {
       const el = document.getElementById('status-msg');
-      if (el) { el.textContent = msg; el.style.display = 'block'; }
+      if (el) { el.textContent = msg; el.style.opacity = '1'; el.style.display = 'block'; }
+      console.log('[CAM]', msg);
     }
+
     function hideStatus() {
       const el = document.getElementById('status-msg');
-      if (el) el.style.display = 'none';
+      if (!el) return;
+      el.style.opacity = '0';
+      setTimeout(() => { el.style.display = 'none'; }, 500);
     }
 
-    // Tunggu AR.js membuat elemen <video>, lalu ganti stream-nya
-    function injectStreamToArjs(stream) {
-      const inject = () => {
-        // AR.js buat video dengan id "arjs-video" atau video pertama di body
-        const vid = document.querySelector('#arjs-video') || document.querySelector('video');
-        if (vid) {
-          // Pause stream bawaan AR.js dulu
-          if (vid.srcObject) {
-            vid.srcObject.getTracks().forEach(t => t.stop());
-          }
-          vid.srcObject = stream;
-          vid.play().catch(() => {});
-          const track = stream.getVideoTracks()[0];
-          const label = track?.label || 'kamera';
-          setStatus('📷 ' + label.slice(0, 40));
-          setTimeout(hideStatus, 3000);
-          console.log('[AR] Stream diinjeksi ke video AR.js:', label);
-        } else {
-          setTimeout(inject, 200);
-        }
-      };
-      inject();
+    // Cari deviceId kamera wide/utama (bukan telefoto/zoom)
+    async function findWideCamera() {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const cameras = devices.filter(d => d.kind === 'videoinput');
+
+      console.log('[CAM] Semua kamera:', cameras.map(c => c.label || c.deviceId));
+
+      const zoomKw = ['telephoto','tele','zoom','periscope','2x','3x','4x','5x','10x'];
+      const wideKw = ['wide','main','back 0','rear 0','camera2 0,0','0, facing back'];
+
+      // Buang kamera zoom/telefoto
+      const nonZoom = cameras.filter(c =>
+        !zoomKw.some(kw => c.label.toLowerCase().includes(kw))
+      );
+
+      // Prioritaskan wide/main dari yang tersisa
+      let best = nonZoom.find(c =>
+        wideKw.some(kw => c.label.toLowerCase().includes(kw))
+      );
+
+      // Fallback: kamera environment pertama
+      if (!best) best = nonZoom[0] || cameras[0];
+
+      console.log('[CAM] Dipilih:', best?.label || best?.deviceId);
+      return best;
     }
 
-    // Boot: pilih kamera lalu inject
-    (async () => {
-      try {
-        const deviceId = await pickBestCamera();
-        const stream   = await startCameraStream(deviceId);
-        injectStreamToArjs(stream);
-      } catch(e) {
-        setStatus('❌ Gagal akses kamera: ' + e.message);
-        console.error('[AR] Camera error:', e);
+    // Ganti stream di video element AR.js dengan stream dari deviceId yang dipilih
+    async function switchToWideCamera(deviceId) {
+      // Cari video yang AR.js gunakan (bukan cam-video kita)
+      // AR.js inject <video> ke dalam <a-scene> atau ke body
+      const arVideo = document.querySelector('a-scene video')
+                   || document.querySelector('#arjs-video')
+                   || document.querySelector('video:not(#cam-video)');
+
+      if (!arVideo) {
+        console.warn('[CAM] Video AR.js tidak ditemukan, coba lagi 500ms');
+        setTimeout(() => switchToWideCamera(deviceId), 500);
+        return;
       }
-    })();
+
+      try {
+        // Stop stream lama
+        if (arVideo.srcObject) {
+          arVideo.srcObject.getTracks().forEach(t => t.stop());
+        }
+
+        // Buat stream baru dengan deviceId yang benar
+        const newStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            deviceId: { exact: deviceId },
+            width:  { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+          audio: false
+        });
+
+        // Inject ke video AR.js
+        arVideo.srcObject = newStream;
+        arVideo.setAttribute('autoplay', '');
+        arVideo.setAttribute('muted', '');
+        arVideo.setAttribute('playsinline', '');
+        await arVideo.play().catch(() => {});
+
+        const label = newStream.getVideoTracks()[0]?.label || 'kamera';
+        setStatus('📷 ' + label.slice(0, 50));
+        setTimeout(hideStatus, 3000);
+        console.log('[CAM] Berhasil switch ke:', label);
+      } catch(e) {
+        console.error('[CAM] Gagal switch kamera:', e);
+        setStatus('Kamera default aktif');
+        setTimeout(hideStatus, 2000);
+      }
+    }
+
+    // Main: jalankan setelah AR.js selesai init kamera
+    async function initCamera() {
+      setStatus('Meminta izin kamera…');
+
+      // Minta izin dulu agar label kamera terisi
+      try {
+        const tmp = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' }, audio: false
+        });
+        tmp.getTracks().forEach(t => t.stop());
+      } catch(e) {
+        setStatus('❌ Izin kamera ditolak');
+        return;
+      }
+
+      setStatus('Mencari kamera utama…');
+      const best = await findWideCamera();
+
+      if (!best) {
+        setStatus('Kamera default aktif');
+        setTimeout(hideStatus, 2000);
+        return;
+      }
+
+      // Tunggu AR.js selesai setup video-nya
+      // AR.js emit 'camera-init-done' atau kita poll sampai <video> ada srcObject
+      const scene = document.getElementById('ar-scene');
+
+      const doSwitch = () => switchToWideCamera(best.deviceId);
+
+      if (scene.hasLoaded) {
+        // Scene sudah load, tunggu sedikit agar video AR.js siap
+        setTimeout(doSwitch, 800);
+      } else {
+        scene.addEventListener('loaded', () => {
+          setTimeout(doSwitch, 800);
+        });
+        // Safety timeout kalau event tidak trigger
+        setTimeout(doSwitch, 4000);
+      }
+    }
+
+    // Hapus elemen #cam-video yang tidak jadi dipakai
+    document.getElementById('cam-video')?.remove();
+
+    // Jalankan
+    initCamera();
 
     // ─── AR scene logic ───────────────────────────────────────
     const MARKER_DEFS = {
