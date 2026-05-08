@@ -7,244 +7,164 @@
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
     html, body { width:100%; height:100%; overflow:hidden; background:#000; }
-    #status-msg {
-      position:fixed; bottom:12px; left:50%; transform:translateX(-50%);
-      background:rgba(0,0,0,0.7); color:#fff; font-size:12px;
-      padding:6px 14px; border-radius:20px; font-family:sans-serif;
+    #msg {
+      position:fixed; bottom:16px; left:50%; transform:translateX(-50%);
+      background:rgba(0,0,0,0.65); color:#fff; font-size:12px;
+      padding:6px 16px; border-radius:20px; font-family:sans-serif;
       pointer-events:none; z-index:99; white-space:nowrap;
-      transition: opacity 0.5s;
     }
   </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.2/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.min.js"></script>
 </head>
 <body>
 
-  <div id="status-msg">Memulai kamera…</div>
-
-  <!--
-    PENTING: sourceType: webcam diset agar AR.js tetap setup pipeline-nya.
-    Kita TIDAK override stream AR.js — kita biarkan AR.js pakai kameranya sendiri,
-    tapi kita paksa constraint deviceId lewat sourceWidth/Height dan
-    memanfaatkan facingMode yang lebih spesifik.
-    
-    Pendekatan baru: pakai sourceType: video, arahkan ke <video> hidden
-    yang sudah kita isi dengan stream kamera pilihan kita.
-  -->
-  <video
-    id="cam-video"
-    autoplay
-    muted
-    playsinline
-    style="
-      position:fixed;
-      top:0; left:0;
-      width:100%; height:100%;
-      object-fit:cover;
-      z-index:0;
-    "
-  ></video>
-
-  <a-scene
-    id="ar-scene"
-    arjs="
-      sourceType: webcam;
-      debugUIEnabled: false;
-      detectionMode: mono;
-      patternRatio: 0.75;
-      maxDetectionRate: 60;
-    "
-    renderer="antialias: true; alpha: true; logarithmicDepthBuffer: true;"
-    vr-mode-ui="enabled: false"
-    device-orientation-permission-ui="enabled: false"
-    style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:1; background:transparent;"
-  >
-    <a-assets id="scene-assets" timeout="15000"></a-assets>
-    <a-entity camera></a-entity>
-  </a-scene>
-
-  <div id="status-msg">Memilih kamera terbaik…</div>
+  <div id="msg">Memulai…</div>
 
   <script>
-    // ─── Pilih kamera wide/utama, bukan telefoto ──────────────
-    //
-    // Strategi baru yang lebih aman:
-    // 1. Biarkan AR.js pakai webcam default-nya (agar pipeline tidak rusak)
-    // 2. Secara paralel, cari deviceId kamera wide terbaik
-    // 3. Ganti stream di video element AR.js SETELAH AR.js selesai setup
-    //    (tunggu event 'camera-initialized' dari a-scene)
+    // ── Langkah 1: minta izin → enumerate → pilih kamera wide
+    // Langkah 2: inject <script> A-Frame + AR.js dengan sourceDevice yg benar
+    // Dengan cara ini AR.js LANGSUNG pakai kamera yang kita pilih sejak awal,
+    // tidak perlu switch stream (switch = sumber masalah layar hitam)
 
-    function setStatus(msg) {
-      const el = document.getElementById('status-msg');
-      if (el) { el.textContent = msg; el.style.opacity = '1'; el.style.display = 'block'; }
-      console.log('[CAM]', msg);
-    }
+    const zoomKw = ['telephoto','tele','zoom','periscope','2x','3x','4x','5x','10x'];
+    const wideKw = ['wide','main','back (0)','camera2 0','facing back 0'];
 
-    function hideStatus() {
-      const el = document.getElementById('status-msg');
-      if (!el) return;
-      el.style.opacity = '0';
-      setTimeout(() => { el.style.display = 'none'; }, 500);
-    }
+    function msg(t) { document.getElementById('msg').textContent = t; }
 
-    // Cari deviceId kamera wide/utama (bukan telefoto/zoom)
-    async function findWideCamera() {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const cameras = devices.filter(d => d.kind === 'videoinput');
-
-      console.log('[CAM] Semua kamera:', cameras.map(c => c.label || c.deviceId));
-
-      const zoomKw = ['telephoto','tele','zoom','periscope','2x','3x','4x','5x','10x'];
-      const wideKw = ['wide','main','back 0','rear 0','camera2 0,0','0, facing back'];
-
-      // Buang kamera zoom/telefoto
-      const nonZoom = cameras.filter(c =>
-        !zoomKw.some(kw => c.label.toLowerCase().includes(kw))
-      );
-
-      // Prioritaskan wide/main dari yang tersisa
-      let best = nonZoom.find(c =>
-        wideKw.some(kw => c.label.toLowerCase().includes(kw))
-      );
-
-      // Fallback: kamera environment pertama
-      if (!best) best = nonZoom[0] || cameras[0];
-
-      console.log('[CAM] Dipilih:', best?.label || best?.deviceId);
-      return best;
-    }
-
-    // Ganti stream di video element AR.js dengan stream dari deviceId yang dipilih
-    async function switchToWideCamera(deviceId) {
-      // Cari video yang AR.js gunakan (bukan cam-video kita)
-      // AR.js inject <video> ke dalam <a-scene> atau ke body
-      const arVideo = document.querySelector('a-scene video')
-                   || document.querySelector('#arjs-video')
-                   || document.querySelector('video:not(#cam-video)');
-
-      if (!arVideo) {
-        console.warn('[CAM] Video AR.js tidak ditemukan, coba lagi 500ms');
-        setTimeout(() => switchToWideCamera(deviceId), 500);
-        return;
+    async function pickCamera() {
+      // Minta izin dulu agar label terisi
+      try {
+        const tmp = await navigator.mediaDevices.getUserMedia({ video: { facingMode:'environment' }, audio:false });
+        tmp.getTracks().forEach(t => t.stop());
+      } catch(e) {
+        msg('❌ Izin kamera ditolak'); return null;
       }
 
-      try {
-        // Stop stream lama
-        if (arVideo.srcObject) {
-          arVideo.srcObject.getTracks().forEach(t => t.stop());
-        }
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const cams    = devices.filter(d => d.kind === 'videoinput');
+      console.log('[CAM]', cams.map(c => c.label));
 
-        // Buat stream baru dengan deviceId yang benar
-        const newStream = await navigator.mediaDevices.getUserMedia({
-          video: {
+      // Buang zoom/telefoto
+      const safe = cams.filter(c => !zoomKw.some(k => c.label.toLowerCase().includes(k)));
+      // Prioritaskan wide/main
+      let best = safe.find(c => wideKw.some(k => c.label.toLowerCase().includes(k)));
+      if (!best) best = safe[0] || cams[0];
+
+      console.log('[CAM] pilih:', best?.label);
+      return best?.deviceId || null;
+    }
+
+    async function boot() {
+      msg('Memilih kamera…');
+      const deviceId = await pickCamera();
+      if (!deviceId) return;
+
+      msg('Memuat AR…');
+
+      // Tentukan constraints yang akan dipakai AR.js
+      // AR.js membaca window.ARjsContext?.arController — tidak bisa
+      // Cara paling bersih: override navigator.mediaDevices.getUserMedia
+      // sehingga saat AR.js memanggil getUserMedia, kita sudah sisipkan deviceId
+
+      const _origGetUserMedia = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+      navigator.mediaDevices.getUserMedia = function(constraints) {
+        // Kalau AR.js minta video environment, kita ganti dengan deviceId spesifik
+        if (constraints && constraints.video) {
+          constraints.video = {
             deviceId: { exact: deviceId },
             width:  { ideal: 1280 },
             height: { ideal: 720 },
-          },
-          audio: false
-        });
+          };
+          console.log('[CAM] getUserMedia intercepted → deviceId', deviceId.slice(0,8));
+        }
+        return _origGetUserMedia(constraints);
+      };
 
-        // Inject ke video AR.js
-        arVideo.srcObject = newStream;
-        arVideo.setAttribute('autoplay', '');
-        arVideo.setAttribute('muted', '');
-        arVideo.setAttribute('playsinline', '');
-        await arVideo.play().catch(() => {});
+      // Sekarang load A-Frame + AR.js — mereka akan pakai getUserMedia yg sudah dioverride
+      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.2/aframe.min.js');
+      await loadScript('https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.min.js');
 
-        const label = newStream.getVideoTracks()[0]?.label || 'kamera';
-        setStatus('📷 ' + label.slice(0, 50));
-        setTimeout(hideStatus, 3000);
-        console.log('[CAM] Berhasil switch ke:', label);
-      } catch(e) {
-        console.error('[CAM] Gagal switch kamera:', e);
-        setStatus('Kamera default aktif');
-        setTimeout(hideStatus, 2000);
-      }
+      buildScene();
+      msg('Arahkan ke marker');
+      setTimeout(() => { document.getElementById('msg').style.display='none'; }, 3000);
     }
 
-    // Main: jalankan setelah AR.js selesai init kamera
-    async function initCamera() {
-      setStatus('Meminta izin kamera…');
-
-      // Minta izin dulu agar label kamera terisi
-      try {
-        const tmp = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment' }, audio: false
-        });
-        tmp.getTracks().forEach(t => t.stop());
-      } catch(e) {
-        setStatus('❌ Izin kamera ditolak');
-        return;
-      }
-
-      setStatus('Mencari kamera utama…');
-      const best = await findWideCamera();
-
-      if (!best) {
-        setStatus('Kamera default aktif');
-        setTimeout(hideStatus, 2000);
-        return;
-      }
-
-      // Tunggu AR.js selesai setup video-nya
-      // AR.js emit 'camera-init-done' atau kita poll sampai <video> ada srcObject
-      const scene = document.getElementById('ar-scene');
-
-      const doSwitch = () => switchToWideCamera(best.deviceId);
-
-      if (scene.hasLoaded) {
-        // Scene sudah load, tunggu sedikit agar video AR.js siap
-        setTimeout(doSwitch, 800);
-      } else {
-        scene.addEventListener('loaded', () => {
-          setTimeout(doSwitch, 800);
-        });
-        // Safety timeout kalau event tidak trigger
-        setTimeout(doSwitch, 4000);
-      }
+    function loadScript(src) {
+      return new Promise((res, rej) => {
+        const s = document.createElement('script');
+        s.src = src; s.onload = res; s.onerror = rej;
+        document.head.appendChild(s);
+      });
     }
 
-    // Hapus elemen #cam-video yang tidak jadi dipakai
-    document.getElementById('cam-video')?.remove();
+    function buildScene() {
+      // Buat a-scene setelah A-Frame siap
+      const scene = document.createElement('a-scene');
+      scene.setAttribute('id', 'ar-scene');
+      scene.setAttribute('arjs', 'sourceType: webcam; debugUIEnabled: false; detectionMode: mono; patternRatio: 0.75; maxDetectionRate: 60;');
+      scene.setAttribute('renderer', 'antialias: true; alpha: true; logarithmicDepthBuffer: true;');
+      scene.setAttribute('vr-mode-ui', 'enabled: false');
+      scene.setAttribute('device-orientation-permission-ui', 'enabled: false');
 
-    // Jalankan
-    initCamera();
+      const assets = document.createElement('a-assets');
+      assets.setAttribute('timeout', '15000');
+      scene.appendChild(assets);
 
-    // ─── AR scene logic ───────────────────────────────────────
+      const cam = document.createElement('a-entity');
+      cam.setAttribute('camera', '');
+      scene.appendChild(cam);
+
+      document.body.appendChild(scene);
+
+      // Register komponen markerhandler
+      AFRAME.registerComponent('markerhandler', {
+        init() {
+          this.hideTimeout = null;
+          this.el.addEventListener('markerFound', () => {
+            if (this.hideTimeout) { clearTimeout(this.hideTimeout); this.hideTimeout = null; }
+            Array.from(this.el.children).forEach(c => { c.object3D.visible = true; });
+          });
+          this.el.addEventListener('markerLost', () => {
+            this.hideTimeout = setTimeout(() => {
+              Array.from(this.el.children).forEach(c => { c.object3D.visible = false; });
+            }, 400);
+          });
+        }
+      });
+
+      // Dengarkan pesan dari halaman induk
+      window.addEventListener('message', (e) => {
+        const { type, payload } = e.data || {};
+        if (type === 'REBUILD') rebuildMarkers(payload);
+      });
+    }
+
+    // ── State model ─────────────────────────────────────────────
+    let modelSrc  = null;
+    let modelType = 'glb';
+
     const MARKER_DEFS = {
       hiro:    { preset: 'hiro' },
       kanji:   { preset: 'kanji' },
-      letterA: { preset: 'custom', url: 'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/data/pattern-files/pattern-letterA.patt' },
-      letterB: { preset: 'custom', url: 'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/data/pattern-files/pattern-letterB.patt' },
-      letterC: { preset: 'custom', url: 'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/data/pattern-files/pattern-letterC.patt' },
-      letterD: { preset: 'custom', url: 'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/data/pattern-files/pattern-letterD.patt' },
+      letterA: { preset:'custom', url:'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/data/pattern-files/pattern-letterA.patt' },
+      letterB: { preset:'custom', url:'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/data/pattern-files/pattern-letterB.patt' },
+      letterC: { preset:'custom', url:'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/data/pattern-files/pattern-letterC.patt' },
+      letterD: { preset:'custom', url:'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/data/pattern-files/pattern-letterD.patt' },
     };
 
-    let currentModelSrc  = null;
-    let currentModelType = 'glb';
-
-    window.addEventListener('message', (e) => {
-      const { type, payload } = e.data || {};
-      if (!type) return;
-      if (type === 'REBUILD') rebuildScene(payload);
-    });
-
-    function rebuildScene({ markers, controls, modelSrc, modelType }) {
-      if (modelSrc) {
-        currentModelSrc  = modelSrc;
-        currentModelType = modelType || 'glb';
-      }
+    function rebuildMarkers({ markers, controls, modelSrc: src, modelType: type }) {
+      if (src) { modelSrc = src; modelType = type || 'glb'; }
 
       const scene = document.getElementById('ar-scene');
+      if (!scene) return;
       scene.querySelectorAll('a-marker').forEach(el => el.remove());
-      if (!currentModelSrc || !markers || markers.length === 0) return;
+      if (!modelSrc || !markers?.length) return;
 
       const { scale, height, rotate } = controls;
 
-      markers.forEach(marker => {
-        const def = MARKER_DEFS[marker.type] || MARKER_DEFS['hiro'];
-
+      markers.forEach(m => {
+        const def = MARKER_DEFS[m.type] || MARKER_DEFS.hiro;
         const aMarker = document.createElement('a-marker');
+
         if (def.preset === 'hiro' || def.preset === 'kanji') {
           aMarker.setAttribute('preset', def.preset);
         } else {
@@ -260,15 +180,15 @@
         aMarker.setAttribute('markerhandler', '');
 
         const entity = document.createElement('a-entity');
-        entity.setAttribute('scale',    `${scale} ${scale} ${scale}`);
+        entity.setAttribute('scale', `${scale} ${scale} ${scale}`);
         entity.setAttribute('position', `0 ${height} 0`);
         entity.setAttribute('rotation', `0 ${rotate} 0`);
         entity.setAttribute('raycaster', 'enabled: false');
 
-        if (currentModelType === 'obj') {
-          entity.setAttribute('obj-model', `obj: url(${currentModelSrc})`);
+        if (modelType === 'obj') {
+          entity.setAttribute('obj-model', `obj: url(${modelSrc})`);
         } else {
-          entity.setAttribute('gltf-model', `url(${currentModelSrc})`);
+          entity.setAttribute('gltf-model', `url(${modelSrc})`);
         }
 
         aMarker.appendChild(entity);
@@ -276,20 +196,8 @@
       });
     }
 
-    AFRAME.registerComponent('markerhandler', {
-      init() {
-        this.hideTimeout = null;
-        this.el.addEventListener('markerFound', () => {
-          if (this.hideTimeout) { clearTimeout(this.hideTimeout); this.hideTimeout = null; }
-          Array.from(this.el.children).forEach(c => { c.object3D.visible = true; });
-        });
-        this.el.addEventListener('markerLost', () => {
-          this.hideTimeout = setTimeout(() => {
-            Array.from(this.el.children).forEach(c => { c.object3D.visible = false; });
-          }, 300);
-        });
-      }
-    });
+    // Mulai
+    boot();
   </script>
 </body>
 </html>
